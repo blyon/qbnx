@@ -50,7 +50,6 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
             print "Send customers to QB\n";
         }
     }
-    return;
 
     // Download Orders from Nexternal.
     if ($orders) {
