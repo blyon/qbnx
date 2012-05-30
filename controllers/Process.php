@@ -4,8 +4,8 @@
  *
  * PHP version 5.3
  *
- * @author   Brandon Lyon <brandon@lyonaround.com>
- * @version  GIT:<git_id>
+ * @author  Brandon Lyon <brandon@lyonaround.com>
+ * @version GIT:<git_id>
  */
 
 require_once dirname(__FILE__) . '/Util.php';
@@ -35,7 +35,22 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
 
     // Download Customers from Nexternal.
     if ($customers) {
+        $nxCustomers = nexternalGetCustomers($nexternal, $from, $to);
+
+        // Check for Cache before sending customers to QB.
+        if (file_exists(CACHE_DIR . NEXTERNAL_CUSTOMER_CACHE . CACHE_EXT)) {
+            // Save orders to cache and process cache.
+            writeCache(NEXTERNAL_CUSTOMER_CACHE, serialize($nxCustomers));
+            while (null !== ($nxCustomers = readCache(NEXTERNAL_CUSTOMER_CACHE))) {
+                print "Send customers to QB from Cache\n";
+                // @TODO: Send to QB.
+            }
+        } else {
+            // @TODO: Send to QB.
+            print "Send customers to QB\n";
+        }
     }
+    return;
 
     // Download Orders from Nexternal.
     if ($orders) {
@@ -44,7 +59,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_ORDER_CACHE . CACHE_EXT)) {
             // Save orders to cache and process cache.
-            writeCache(NEXTERNAL_ORDER_CACHE, serialize($orders));
+            writeCache(NEXTERNAL_ORDER_CACHE, serialize($nxOrders));
             while (null !== ($nxOrders = readCache(NEXTERNAL_ORDER_CACHE))) {
                 print "Send orders to QB from Cache\n";
                 // @TODO: Send to QB.

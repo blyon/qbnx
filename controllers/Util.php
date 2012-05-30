@@ -4,8 +4,8 @@
  *
  * PHP version 5.3
  *
- * @author   Brandon Lyon <brandon@lyonaround.com>
- * @version  GIT:<git_id>
+ * @author  Brandon Lyon <brandon@lyonaround.com>
+ * @version GIT:<git_id>
  */
 
 

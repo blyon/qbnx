@@ -39,11 +39,53 @@ function nexternalAuth()
 
 
 /**
+ *
+ * @param Nexternal $nx   Nexternal Object Reference.
+ * @param type      $from Beginning Time
+ * @param type      $to   End Time
+ *
+ * @return array of Customers.
+ */
+function nexternalGetCustomers(Nexternal $nx, $from, $to)
+{
+    // Query Customers.
+    $page      = 0;
+    $morePages = true;
+    $customers = array();
+    while ($morePages) {
+        $page++;
+        $response = $nx->processCustomerQueryResponse(
+            $nx->customerQuery($from, $to, $page)
+        );
+
+        // Add Customer(s) to Array.
+        foreach ($response['customers'] as $customer) {
+            $customers[] = $customer;
+        }
+
+        // set additional pages flag.
+        $morePages = $response['morePages'];
+
+        // reset response.
+        unset($response);
+
+        // write Customers to File if we've reached our cache cap.
+        if (MEMORY_CAP <= memory_get_usage()) {
+            writeCache(NEXTERNAL_CUSTOMER_CACHE, serialize($customers));
+            $customers = array();
+        }
+    }
+
+    return $customers;
+}
+
+
+/**
  * Download Orders from Nexternal.
  *
- * @param Nexternal $nx       Nexternal Object Reference.
- * @param integer   $from     Beginning Time
- * @param integer   $to       End Time
+ * @param Nexternal $nx   Nexternal Object Reference.
+ * @param integer   $from Beginning Time
+ * @param integer   $to   End Time
  *
  * @return array of Orders.
  */

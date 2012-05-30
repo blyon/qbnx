@@ -7,8 +7,8 @@
  *
  * PHP version 5.3
  *
- * @author   Brandon Lyon <brandon@lyonaround.com>
- * @version  GIT:<git_id>
+ * @author  Brandon Lyon <brandon@lyonaround.com>
+ * @version GIT:<git_id>
  * @arguments
  * Arguments:
  *   -h     Help Menu
@@ -39,6 +39,7 @@ $args = array(
 // Parse user entered Arguments.
 parseArgs($args);
 
+
 // Check for required args, help, and valid time.
 if ($args['h']
     || (!$args['q'] && !$args['n'])
@@ -52,6 +53,17 @@ if ($args['h']
 // Check for Quickbooks Argument.
 if ($args['q']) {
     pushNexternalToQuickbooks(
+        START_TIME - convertTime($args['t']),
+        START_TIME,
+        true,
+        true
+    );
+}
+
+
+// Check for Nexternal Argument.
+if ($args['n']) {
+    pushQuickbooksToNexternal(
         START_TIME - convertTime($args['t']),
         START_TIME,
         true,

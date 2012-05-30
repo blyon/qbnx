@@ -7,8 +7,8 @@ class Order
     public $type;
     public $status;
     public $subTotal;
-    public $tax;
-    public $shipping;
+    public $taxTotal;
+    public $shipTotal;
     public $total;
     public $memo;
     public $location;

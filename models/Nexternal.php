@@ -1,7 +1,8 @@
 <?php
-require_once('Log.php');
-require_once('Util.php');
-require_once('Order.php');
+require_once dirname(__FILE__) . '/Log.php';
+require_once dirname(__FILE__) . '/Util.php';
+require_once dirname(__FILE__) . '/Order.php';
+require_once dirname(__FILE__) . '/Customer.php';
 
 class Nexternal
 {
@@ -340,22 +341,48 @@ class Nexternal
                 $o->type            = (string) $order->OrderType;
                 $o->status          = (string) $order->OrderStatus;
                 $o->subTotal        = (string) $order->OrderNet;
-                $o->tax             = null;
-                $o->shipping        = null;
+                $o->taxTotal        = (string) $order->SalesTax->SalesTaxTotal;
+                $o->shipTotal       = (string) $order->ShipRate;
                 $o->total           = (string) $order->OrderAmount;
                 $o->memo            = (string) $order->Comments->CompanyComments;
                 $o->location        = (string) $order->PlacedBy;
                 $o->ip              = (string) $order->IP->IPAddress;
                 $o->paymentStatus   = (string) $order->BillingStatus;
-                $o->paymentMethod   = null;
-                $o->customer        = null;
-                $o->billingAddress  = null;
-                $o->shippingAddress = null;
+                $o->paymentMethod   = array(
+                    'type'       => (string) $order->Payment->PaymentMethod,
+                    'cardType'   => (string) $order->Payment->CreditCard->CreditCardType,
+                    'cardNumber' => (string) $order->Payment->CreditCard->CreditCardNumber,
+                    'cardExp'    => (string) $order->Payment->CreditCard->CreditCardExpDate,
+                );
+                $o->customer        = (string) $order->Customer->CustomerNo;
+                $o->billingAddress  = array(
+                    'name'     => (string) $order->BillTo->Address->Name->FirstName
+                        . ' ' . (string) $order->BillTo->Address->Name->LastName,
+                    'company'  => (string) $order->BillTo->Address->CompanyName,
+                    'address'  => (string) $order->BillTo->Address->StreetAddress1,
+                    'address2' => (string) $order->BillTo->Address->StreetAddress2,
+                    'city'     => (string) $order->BillTo->Address->City,
+                    'state'    => (string) $order->BillTo->Address->StateProvCode,
+                    'zip'      => (string) $order->BillTo->Address->ZipPostalCode,
+                    'country'  => (string) $order->BillTo->Address->CountryCode,
+                    'phone'    => (string) $order->BillTo->Address->PhoneNumber,
+                );
+                $o->shippingAddress  = array(
+                    'name'     => (string) $order->ShipTo->Address->Name->FirstName
+                        . ' ' . (string) $order->ShipTo->Address->Name->LastName,
+                    'company'  => (string) $order->ShipTo->Address->CompanyName,
+                    'address'  => (string) $order->ShipTo->Address->StreetAddress1,
+                    'address2' => (string) $order->ShipTo->Address->StreetAddress2,
+                    'city'     => (string) $order->ShipTo->Address->City,
+                    'state'    => (string) $order->ShipTo->Address->StateProvCode,
+                    'zip'      => (string) $order->ShipTo->Address->ZipPostalCode,
+                    'country'  => (string) $order->ShipTo->Address->CountryCode,
+                    'phone'    => (string) $order->ShipTo->Address->PhoneNumber,
+                );
                 $o->products        = array();
                 $o->discounts       = array();
 
                 $return['orders'][] = $o;
-                //print_r($order);
             }
         }
 
@@ -407,9 +434,46 @@ class Nexternal
      *
      *
      */
-    public function processCustomerQueryRepsonse($responseDom)
+    public function processCustomerQueryResponse($dom)
     {
+        $return = array(
+            'morePages' => false,
+            'customers' => array(),
+            'errors'    => array(),
+        );
+
+        // Process Errors.
+        // @TODO.
+
+        // Check for More Pages.
+        $return['morePages'] = isset($dom->NextPage);
+
+        // Process Customers.
+        if (isset($dom->Customer)) {
+            foreach ($dom->Customer as $customer) {
+                $c = new Customer;
+                $c->id      = (string) $customer->CustomerNo;
+                $c->email   = (string) $customer->Email;
+                $c->type    = (string) $customer->CustomerType;
+                $c->address  = array(
+                    'type'     => (string) $customer->Address->Type,
+                    'name'     => (string) $customer->Address->Name->FirstName
+                        . ' ' . (string) $customer->Address->Name->LastName,
+                    'company'  => (string) $order->Address->CompanyName,
+                    'address'  => (string) $order->Address->StreetAddress1,
+                    'address2' => (string) $order->Address->StreetAddress2,
+                    'city'     => (string) $order->Address->City,
+                    'state'    => (string) $order->Address->StateProvCode,
+                    'zip'      => (string) $order->Address->ZipPostalCode,
+                    'country'  => (string) $order->Address->CountryCode,
+                    'phone'    => (string) $order->Address->PhoneNumber,
+                );
+
+                $return['customers'][] = $c;
+            }
+        }
+
+        return $return;
     }
 
 }
-
