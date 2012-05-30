@@ -1,4 +1,4 @@
 config.php
-log/*
-cache/*
+log/*.*
+cache/*.*
 test
