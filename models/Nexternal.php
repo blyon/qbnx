@@ -316,6 +316,8 @@ class Nexternal
      * Process Order Query Response.
      *
      * @param SimpleXml Object
+     *
+     * @return array
      */
     public function processOrderQueryResponse($dom)
     {
@@ -462,9 +464,11 @@ class Nexternal
 
 
     /**
+     * Process Customer Query Response.
      *
+     * @param SimpleXml Object
      *
-     *
+     * @return array
      */
     public function processCustomerQueryResponse($dom)
     {
