@@ -1,6 +1,8 @@
 <?php
-require_once('Log.php');
-require_once('Util.php');
+require_once dirname(__FILE__) . '/Log.php';
+require_once dirname(__FILE__) . '/Util.php';
+require_once dirname(__FILE__) . '/Order.php';
+require_once dirname(__FILE__) . '/Customer.php';
 
 class Quickbooks
 {
@@ -49,7 +51,7 @@ class Quickbooks
             $this->log->write(Log::WARN, "Request returned 0 records");
         }
 
-        return $response.
+        return $response;
     }
 
 
@@ -91,7 +93,7 @@ class Quickbooks
             $this->log->write(Log::ERROR, "Failed to retrieve SalesReceipt List for invoice: " . $invoiceNumber);
             return false;
         }
-        if (preg_match("/did not find/", $response->ResponseList->GetAt(0)->StatusMessage) {
+        if (preg_match("/did not find/", $response->ResponseList->GetAt(0)->StatusMessage)) {
 
             $this->log->write(Log::NOTICE, "No SalesReceipts for invoice: " . $invoiceNumber);
             return false;
