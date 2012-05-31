@@ -20,6 +20,6 @@ class Order
     public $shippingAddress;
     public $products        = array();
     public $discounts       = array();
-
+    public $giftCerts       = array();
 }
 

@@ -7,7 +7,7 @@ class Util
      *
      * @return array config.
      */
-    public function config()
+    public static function config()
     {
         return include(preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/config.php");
     }
@@ -22,7 +22,7 @@ class Util
      *
      * @return string HTTP Post Result.
      */
-    public function postRequest($url, $data, $optionalHeaders=null)
+    public static function postRequest($url, $data, $optionalHeaders=null)
     {
         $params = array('http' => array(
             'method'  => 'POST',

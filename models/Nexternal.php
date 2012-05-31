@@ -348,12 +348,12 @@ class Nexternal
                 $o->location        = (string) $order->PlacedBy;
                 $o->ip              = (string) $order->IP->IPAddress;
                 $o->paymentStatus   = (string) $order->BillingStatus;
-                $o->paymentMethod   = array(
-                    'type'       => (string) $order->Payment->PaymentMethod,
-                    'cardType'   => (string) $order->Payment->CreditCard->CreditCardType,
-                    'cardNumber' => (string) $order->Payment->CreditCard->CreditCardNumber,
-                    'cardExp'    => (string) $order->Payment->CreditCard->CreditCardExpDate,
-                );
+                $o->paymentMethod['type'] = (string) $order->Payment->PaymentMethod;
+                if ($o->paymentMethod['type'] == 'Credit Card') {
+                    $o->paymentMethod['cardType']  = (string) $order->Payment->CreditCard->CreditCardType;
+                    $o->paymentMethod['cardNumber']= (string) $order->Payment->CreditCard->CreditCardNumber;
+                    $o->paymentMethod['cardExp']   = (string) $order->Payment->CreditCard->CreditCardExpDate;
+                }
                 $o->customer        = (string) $order->Customer->CustomerNo;
                 $o->billingAddress  = array(
                     'name'     => (string) $order->BillTo->Address->Name->FirstName
@@ -379,8 +379,40 @@ class Nexternal
                     'country'  => (string) $order->ShipTo->Address->CountryCode,
                     'phone'    => (string) $order->ShipTo->Address->PhoneNumber,
                 );
-                $o->products        = array();
-                $o->discounts       = array();
+
+                // Add Product(s).
+                if (isset($order->ShipTo->ShipFrom->LineItem)) {
+                    foreach ($order->ShipTo->ShipFrom->LineItem as $lineItem) {
+                        $o->products[] = array(
+                            'sku'       => (string) $lineItem->LineProduct->ProductSKU,
+                            'name'      => (string) $lineItem->LineProduct->ProductName,
+                            'qty'       => (string) $lineItem->Quantity,
+                            'price'     => (string) $lineItem->ExtPrice,
+                            'tracking'  => (string) $lineItem->TrackingNumber,
+                        );
+                    }
+                }
+
+                // Add Discount(s).
+                if (isset($order->Discount)) {
+                    foreach ($order->Discount as $discount) {
+                        $o->discounts[] = array(
+                            'type'  => (string) $discount->Type,
+                            'name'  => (string) $discount->Name,
+                            'value' => (string) $discount->Value,
+                        );
+                    }
+                }
+
+                // Add Gift Certificate(s).
+                if (isset($order->GiftCert)) {
+                    foreach ($order->GiftCert as $gc) {
+                        $o->giftCerts[] = array(
+                            'code'   => (string) $gc->GiftCertCode,
+                            'amount' => (string) $gc->GiftCertAmount,
+                        );
+                    }
+                }
 
                 $return['orders'][] = $o;
             }

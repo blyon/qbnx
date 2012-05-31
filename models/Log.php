@@ -76,7 +76,7 @@ class Log
         $timestamp   = date('Y-m-d H:i:s');
         $levelString = $this->printLevel($level);
         while (!empty($data)) {
-            $string = sprintf("%s\t%s %s\n", $timestamp, $levelString, substr($data, 0, $this->messageLength));
+            $string = sprintf("%s %s %s\n", $timestamp, $levelString, substr($data, 0, $this->messageLength));
             $data   = (strlen($data) <= $this->messageLength) ? '' : substr($data, $this->messageLength);
             if ($level <= self::DISPLAY_LEVEL)
                 print $string;
@@ -97,14 +97,14 @@ class Log
     private function printLevel($level)
     {
         $levels = array(
-            self::EMERG     => str_pad('EMERG', 8),
-            self::ALERT     => str_pad('ALERT', 8),
-            self::CRIT      => str_pad('CRIT', 8),
-            self::ERROR     => str_pad('ERROR', 8),
-            self::WARN      => str_pad('WARN', 8),
-            self::NOTICE    => str_pad('NOTICE', 8),
-            self::INFO      => str_pad('INFO', 8),
-            self::DEBUG     => str_pad('DEBUG', 8),
+            self::EMERG     => str_pad('EMERG',  6),
+            self::ALERT     => str_pad('ALERT',  6),
+            self::CRIT      => str_pad('CRIT',   6),
+            self::ERROR     => str_pad('ERROR',  6),
+            self::WARN      => str_pad('WARN',   6),
+            self::NOTICE    => str_pad('NOTICE', 6),
+            self::INFO      => str_pad('INFO',   6),
+            self::DEBUG     => str_pad('DEBUG',  6),
         );
         return $levels[$level];
     }
