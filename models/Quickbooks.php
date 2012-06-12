@@ -85,7 +85,7 @@ class Quickbooks
     /**
      * Send Request to Quickbooks.
      */
-    public static function sendRequest()
+    public function sendRequest()
     {
         // Send Request.
         $response = $this->_sm->DoRequests($this->request);

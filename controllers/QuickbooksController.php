@@ -44,7 +44,7 @@ class QuickbooksController
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
         // 0-Starts With, 1-Contains, 2-Ends With
         $query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
-        $query->OrTxnQuery->TxnFilter->OrRefNumberFilter->RefNumber->setValue($id);
+        $query->ORTxnQuery->TxnFilter->OrRefNumberFilter->RefNumberFilter->RefNumber->setValue($id);
 
         return $this->_qb->sendRequest();
     }
