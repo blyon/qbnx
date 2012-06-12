@@ -10,7 +10,7 @@
 
 require_once dirname(__FILE__) . '/Util.php';
 require_once dirname(__FILE__) . '/Nexternal.php';
-require_once dirname(__FILE__) . '/Quickbooks.php';
+require_once dirname(__FILE__) . '/QuickbooksController.php';
 
 
 /**
