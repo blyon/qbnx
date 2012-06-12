@@ -10,7 +10,7 @@ class Log
     const NOTICE= 5;
     const INFO  = 6;
     const DEBUG = 7;
-    private static $_instance;
+    private static $__instance;
     private $_fh;
     public $messageLength = 80;
     public $directory;
@@ -20,54 +20,64 @@ class Log
     private function __clone() {}
     public function __destruct()
     {
-        if ($this->_fh)
-            $this->close();
+        if ($this->_fh) {
+            $this->close(_);
+        }
     }
 
 
     public static function getInstance()
     {
-        if (is_null(self::$_instance))
-            self::$_instance = new Log;
-        return self::$_instance;
+        if (is_null(self::$__instance)) {
+            self::$__instance = new Log;
+        }
+        return self::$__instance;
     }
 
 
     public function open()
     {
-        if (empty($this->directory))
+        if (empty($this->directory)) {
             throw new Exception("Cannot create log file, no path specified");
-        if (!is_dir($this->directory))
+        }
+        if (!is_dir($this->directory)) {
             throw new Exception("Cannot create log file, invalid directory: " . $this->directory);
-        if (!is_writeable($this->directory))
+        }
+        if (!is_writeable($this->directory)) {
             throw new Exception("Cannot create log file, insufficient permission: " . $this->directory);
+        }
 
-        if (!preg_match("@/$@", $this->directory))
+        if (!preg_match("@/$@", $this->directory)) {
             $this->directory .= "/";
+        }
 
         //$file = $this->directory . date('Y-m-d_H:i:s') . ".log";
         $file = $this->directory . "test.log";
-        if (FALSE === ($this->_fh = fopen($file, "a")))
+        if (FALSE === ($this->_fh = fopen($file, "a"))) {
             throw new Exception("Failed to create log file: " . $file);
+        }
     }
 
 
     public function close()
     {
-        if ($this->_fh)
+        if ($this->_fh) {
             fclose($this->_fh);
+        }
     }
 
 
     public function write($level, $data)
     {
         // Open Log File if not already open.
-        if (is_null($this->_fh))
+        if (is_null($this->_fh)) {
             $this->open();
+        }
 
         // Validate Level.
-        if (!$this->validateLevel($level))
+        if (!$this->validateLevel($level)) {
             throw new Exception("Invalid Log Level: " . $level);
+        }
 
         // Strip NewLines from data.
         $data = preg_replace("/[\n|\r]/", "", $data);
@@ -78,10 +88,12 @@ class Log
         while (!empty($data)) {
             $string = sprintf("%s %s %s\n", $timestamp, $levelString, substr($data, 0, $this->messageLength));
             $data   = (strlen($data) <= $this->messageLength) ? '' : substr($data, $this->messageLength);
-            if ($level <= self::DISPLAY_LEVEL)
+            if ($level <= self::DISPLAY_LEVEL) {
                 print $string;
-            if (!fwrite($this->_fh, $string))
+            }
+            if (!fwrite($this->_fh, $string)) {
                 throw new Exception("Failed to write to Log: \n" .$string);
+            }
         }
     }
 
@@ -109,4 +121,3 @@ class Log
         return $levels[$level];
     }
 }
-

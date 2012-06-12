@@ -41,14 +41,14 @@ class Quickbooks
      */
     private function __construct()
     {
-        self::$_docroot         = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
+        $this->_docroot         = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
         $config                 = Util::config();
-        self::$_appName         = $config['Quickbooks']['app'];
-        self::$_qbfcVersion     = $config['Quickbooks']['version'];
-        self::$log              = Log::getInstance();
-        self::$log->directory   = $config['Log']['directory'];
+        $this->_appName         = $config['Quickbooks']['app'];
+        $this->_qbfcVersion     = $config['Quickbooks']['version'];
+        $this->log              = Log::getInstance();
+        $this->log->directory   = $config['Log']['directory'];
 
-        self::connect();
+        $this->connect();
     }
 
 
@@ -57,28 +57,28 @@ class Quickbooks
      */
     public function __destruct()
     {
-        self::$_sm->EndSession(self::$_ticket);
-        self::$_sm->CloseConnection();
+        $this->_sm->EndSession(self::$_ticket);
+        $this->_sm->CloseConnection();
     }
 
 
     /**
      *
      */
-    public static function connect()
+    public function connect()
     {
-        self::$log->write(Log::DEBUG, "Quickbooks::connect");
+        $this->log->write(Log::DEBUG, "Quickbooks::connect");
 
         // Create Session Manager.
-        self::$_sm = new COM("QBFC" . self::$_qbfcVersion . ".QBSessionManager");
+        $this->_sm = new COM("QBFC" . self::$_qbfcVersion . ".QBSessionManager");
         // Open Connection.
-        self::$_sm->OpenConnection("", self::$_appName);
+        $this->_sm->OpenConnection("", self::$_appName);
         // Begin Session (ignore multi/single user modes)
-        self::$_sm->BeginSession("", 2);
+        $this->_sm->BeginSession("", 2);
         // Set Message Request.
-        self::$request = self::$_sm->CreateMsgSetRequest("US", self::$_qbfcVersion, 0);
+        $this->request = self::$_sm->CreateMsgSetRequest("US", $this->_qbfcVersion, 0);
         // Allow "continue on error"
-        self::$request->Attributes->OnError = 1;
+        $this->request->Attributes->OnError = 1;
     }
 
 
@@ -88,14 +88,14 @@ class Quickbooks
     public static function sendRequest()
     {
         // Send Request.
-        $response = self::$_sm->DoRequests(self::$request);
+        $response = $this->_sm->DoRequests($this->request);
 
         // Clear Requests.
-        self::$request->ClearRequests();
+        $this->request->ClearRequests();
 
         // Ensure Response.
         if (!$response->ResponseList->Count) {
-            self::$log->write(Log::WARN, "Request returned 0 records");
+            $this->log->write(Log::WARN, "Request returned 0 records");
         }
 
         return $response;

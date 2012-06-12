@@ -16,7 +16,7 @@ require_once dirname(__FILE__) . '/../models/Quickbooks.php';
 class QuickbooksController
 {
     private $_qb;
-    private $_log;
+    private $log;
 
 
     /**
@@ -27,6 +27,7 @@ class QuickbooksController
     public function __construct()
     {
         $this->_qb = Quickbooks::getInstance();
+        $this->log = $this->_qb->log;
     }
 
 
@@ -37,14 +38,14 @@ class QuickbooksController
      */
     public function querySalesReceipt($invoiceNumber)
     {
-        $this->_log->write(Log::DEBUG, "Quickbooks::querySalesReceipt(".$invoiceNumber.")");
+        $this->log->write(Log::DEBUG, "Quickbooks::querySalesReceipt(".$invoiceNumber.")");
 
-        $query = $this->_qb::request->AppendSalesReceiptQueryRq();
+        $query = $this->_qb->request->AppendSalesReceiptQueryRq();
         // 0-Starts With, 1-Contains, 2-Ends With
         $query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
         $query->OrTxnQuery->TxnFilter->OrRefNumberFilter->RefNumber->setValue($invoiceNumber);
 
-        return $this->_qb::sendRequest();
+        return $this->_qb->sendRequest();
     }
 
 
