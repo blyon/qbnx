@@ -67,11 +67,11 @@ class Nexternal
      */
     public function __construct()
     {
-        $this->_docroot = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
-        $config = Util::config();
-        $this->_config = $config['Nexternal'];
-        $this->log = Log::getInstance();
-        $this->log->directory = $config['Log']['directory'];
+        $this->_docroot         = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
+        $config                 = Util::config();
+        $this->_config          = $config['Nexternal'];
+        $this->log              = Log::getInstance();
+        $this->log->directory   = $config['Log']['directory'];
     }
 
 

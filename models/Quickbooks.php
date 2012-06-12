@@ -6,28 +6,43 @@ require_once dirname(__FILE__) . '/Customer.php';
 
 class Quickbooks
 {
+    private $__instance;
     private $_sm;
     private $_qbfcVersion;
     private $_request;
     private $_ticket;
-    private $_config;
     private $_docroot;
-    private $log;
-    public  $appName;
+    private $_appName;
+    public  $log;
+
+
+    public static function getInstance()
+    {
+        if (self::$__instance === null) {
+            self::$__instance = new Quickbooks;
+            self::initConfig();
+        }
+        return self::$__instance;
+    }
+
+
+    private function __construct() {}
+    private function __clone() {}
 
 
     /**
      * Intialize config, docroot, and log in Constructor.
      */
-    public function __construct()
+    private function initConfig()
     {
-        $this->_docroot = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
-        $config = Util::config();
-        $this->_config = $config['Nexternal'];
-        $this->log = Log::getInstance();
-        $this->log->directory = $config['Log']['directory'];
+        self::$_docroot         = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
+        $config                 = Util::config();
+        self::$_appName         = $config['Quickbooks']['app'];
+        self::$_qbfcVersion     = $config['Quickbooks']['version'];
+        self::$log              = Log::getInstance();
+        self::$log->directory   = $config['Log']['directory'];
 
-        $this->connect();
+        self::connect();
     }
 
 
@@ -36,8 +51,8 @@ class Quickbooks
      */
     public function __destruct()
     {
-        $this->_sm->EndSession($this->_ticket);
-        $this->_sm->CloseConnection();
+        self::$_sm->EndSession(self::$_ticket);
+        self::$_sm->CloseConnection();
     }
 
 
@@ -49,14 +64,14 @@ class Quickbooks
     private function sendRequest()
     {
         // Send Request.
-        $response = $this->_sm->DoRequests($this->_request);
+        $response = self::$_sm->DoRequests(self::$_request);
 
         // Clear Requests.
-        $this->_request->ClearRequests();
+        self::$_request->ClearRequests();
 
         // Ensure Response.
         if (!$response->ResponseList->Count) {
-            $this->log->write(Log::WARN, "Request returned 0 records");
+            self::$log->write(Log::WARN, "Request returned 0 records");
         }
 
         return $response;
@@ -68,18 +83,18 @@ class Quickbooks
      */
     public function connect()
     {
-        $this->log->write(Log::DEBUG, "Quickbooks::connect");
+        self::$log->write(Log::DEBUG, "Quickbooks::connect");
 
         // Create Session Manager.
-        $this->_sm = new COM("QBFC" . $this->_qbfcVersion . ".QBSessionManager");
+        self::$_sm = new COM("QBFC" . self::$_qbfcVersion . ".QBSessionManager");
         // Open Connection.
-        $this->_sm->OpenConnection("", $this->appName);
+        self::$_sm->OpenConnection("", self::$_appName);
         // Begin Session (ignore multi/single user modes)
-        $this->_sm->BeginSession("", 2);
+        self::$_sm->BeginSession("", 2);
         // Set Message Request.
-        $this->_request = $this->_sm->CreateMsgSetRequest("US", $this->_qbfcVersion, 0);
+        self::$_request = self::$_sm->CreateMsgSetRequest("US", self::$_qbfcVersion, 0);
         // Allow "continue on error"
-        $this->_request->Attributes->OnError = 1;
+        self::$_request->Attributes->OnError = 1;
     }
 
 
@@ -90,14 +105,14 @@ class Quickbooks
      */
     public function querySalesReceipt($invoiceNumber)
     {
-        $this->log->write(Log::DEBUG, "Quickbooks::querySalesReceipt(".$invoiceNumber.")");
+        self::$log->write(Log::DEBUG, "Quickbooks::querySalesReceipt(".$invoiceNumber.")");
 
         $query = $self->_request->AppendSalesReceiptQueryRq();
         // 0-Starts With, 1-Contains, 2-Ends With
         $query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
         $query->OrTxnQuery->TxnFilter->OrRefNumberFilter->RefNumber->setValue($invoiceNumber);
 
-        return $this->sendRequest();
+        return self::sendRequest();
     }
 
 
@@ -110,14 +125,14 @@ class Quickbooks
      */
     public function processSalesReceiptQuery($invoiceNumber, $response)
     {
-        $this->log->write(Log::DEBUG, "Quickbooks::processSalesReceiptQuery(".$invoiceNumber.")");
+        self::$log->write(Log::DEBUG, "Quickbooks::processSalesReceiptQuery(".$invoiceNumber.")");
 
         if (!$response->ResponseList->Count) {
-            $this->log->write(Log::ERROR, "Failed to retrieve SalesReceipt List for invoice: " . $invoiceNumber);
+            self::$log->write(Log::ERROR, "Failed to retrieve SalesReceipt List for invoice: " . $invoiceNumber);
             return false;
         }
         if (preg_match("/did not find/", $response->ResponseList->GetAt(0)->StatusMessage)) {
-            $this->log->write(Log::NOTICE, "No SalesReceipts for invoice: " . $invoiceNumber);
+            self::$log->write(Log::NOTICE, "No SalesReceipts for invoice: " . $invoiceNumber);
             return false;
         }
         return true;
@@ -126,7 +141,7 @@ class Quickbooks
 
     public function addSalesReceipt(Order $order)
     {
-        $request = $this->_request->AppendSalesReceiptAddRq();
+        $request = self::$_request->AppendSalesReceiptAddRq();
 
         // General Sales Receipt Info.
         $request->DepositToAccountRef->FullName;
@@ -185,7 +200,7 @@ class Quickbooks
         $lineItem->SalesReceiptLineAdd->ServiceDate;
 
         // Send Request to Quickbooks.
-        return $this->sendRequest();
+        return self::sendRequest();
     }
 
 

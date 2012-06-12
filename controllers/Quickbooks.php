@@ -20,5 +20,5 @@ require_once dirname(__FILE__) . '/../models/Quickbooks.php';
  */
 function quickbooksAuth()
 {
-    return new Quickboks;
+    return new Quickbooks;
 }
