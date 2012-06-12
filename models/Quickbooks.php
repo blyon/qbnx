@@ -13,7 +13,7 @@ class Quickbooks
     private $_config;
     private $_docroot;
     private $log;
-    public $appName;
+    public  $appName;
 
 
     /**
@@ -31,6 +31,9 @@ class Quickbooks
     }
 
 
+    /**
+     * Safely end session and close connection.
+     */
     public function __destruct()
     {
         $this->_sm->EndSession($this->_ticket);
@@ -38,13 +41,18 @@ class Quickbooks
     }
 
 
+    /**
+     *
+     *
+     * @return type
+     */
     private function sendRequest()
     {
         // Send Request.
-        $response = $this->_sm->DoRequests($this->_req);
+        $response = $this->_sm->DoRequests($this->_request);
 
         // Clear Requests.
-        $this->_req->ClearRequests();
+        $this->_request->ClearRequests();
 
         // Ensure Response.
         if (!$response->ResponseList->Count) {
@@ -55,6 +63,9 @@ class Quickbooks
     }
 
 
+    /**
+     *
+     */
     public function connect()
     {
         $this->log->write(Log::DEBUG, "Quickbooks::connect");
@@ -72,11 +83,16 @@ class Quickbooks
     }
 
 
+    /**
+     *
+     * @param type $invoiceNumber
+     * @return type
+     */
     public function querySalesReceipt($invoiceNumber)
     {
         $this->log->write(Log::DEBUG, "Quickbooks::querySalesReceipt(".$invoiceNumber.")");
 
-        $query = $self->_req->AppendSalesReceiptQueryRq();
+        $query = $self->_request->AppendSalesReceiptQueryRq();
         // 0-Starts With, 1-Contains, 2-Ends With
         $query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
         $query->OrTxnQuery->TxnFilter->OrRefNumberFilter->RefNumber->setValue($invoiceNumber);
@@ -85,6 +101,13 @@ class Quickbooks
     }
 
 
+    /**
+     * @TODO: Refactor to return Order object.
+     *
+     * @param type $invoiceNumber
+     * @param type $response
+     * @return boolean
+     */
     public function processSalesReceiptQuery($invoiceNumber, $response)
     {
         $this->log->write(Log::DEBUG, "Quickbooks::processSalesReceiptQuery(".$invoiceNumber.")");
@@ -94,7 +117,6 @@ class Quickbooks
             return false;
         }
         if (preg_match("/did not find/", $response->ResponseList->GetAt(0)->StatusMessage)) {
-
             $this->log->write(Log::NOTICE, "No SalesReceipts for invoice: " . $invoiceNumber);
             return false;
         }
@@ -102,8 +124,87 @@ class Quickbooks
     }
 
 
-    public function addSalesReceipt()
+    public function addSalesReceipt(Order $order)
     {
+        $request = $this->_request->AppendSalesReceiptAddRq();
+
+        // General Sales Receipt Info.
+        $request->DepositToAccountRef->FullName;
+        $request->RefNumber;
+        $request->TxnDate;
+        $request->CustomerRef->FullName;
+        $request->Memo;
+        // Payment Method.
+        $request->PaymentMethodRef->FullName;
+        // Sales Tax.
+        $request->ItemSalesTaxRef->FullName;
+        // Billing Address.
+        $request->BillAddress->Addr1;
+        $request->BillAddress->Addr2;
+        $request->BillAddress->City;
+        $request->BillAddress->State;
+        $request->BillAddress->PostalCode;
+        $request->BillAddress->Country;
+        $request->BillAddress->Note;
+        // Shipping Address.
+        $request->ShipAddress->Addr1;
+        $request->ShipAddress->Addr2;
+        $request->ShipAddress->City;
+        $request->ShipAddress->State;
+        $request->ShipAddress->PostalCode;
+        $request->ShipAddress->Country;
+        $request->ShipAddress->Note;
+        // Products.
+        foreach ($order->products as $product) {
+            $lineItem = $request->ORSalesReceiptLineAddList->Append();
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName;
+            $lineItem->SalesReceiptLineAdd->Desc;
+            $lineItem->SalesReceiptLineAdd->Amount;
+            $lineItem->SalesReceiptLineAdd->Quantity;
+            $lineItem->SalesReceiptLineAdd->ServiceDate;
+        }
+        // Gift Certificates.
+        foreach ($order->giftCerts as $gc) {
+            $lineItem = $request->ORSalesReceiptLineAddList->Append();
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName;
+            $lineItem->SalesReceiptLineAdd->Desc;
+            $lineItem->SalesReceiptLineAdd->Amount;
+        }
+        // Discounts.
+        foreach ($order->discounts as $discount) {
+            $lineItem = $request->ORSalesReceiptLineAddList->Append();
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName;
+            $lineItem->SalesReceiptLineAdd->Desc;
+            $lineItem->SalesReceiptLineAdd->Amount;
+        }
+        // Shipping Cost.
+        $lineItem = $request->ORSalesReceiptLineAddList->Append();
+        $lineItem->SalesReceiptLineAdd->ItemRef->FullName;
+        $lineItem->SalesReceiptLineAdd->Desc;
+        $lineItem->SalesReceiptLineAdd->Amount;
+        $lineItem->SalesReceiptLineAdd->ServiceDate;
+
+        // Send Request to Quickbooks.
+        return $this->sendRequest();
+    }
+
+
+    /**
+     *
+     * @param type $response
+     */
+    public function processAddSalesReceipt($response) {
+
+    }
+
+
+    public function addSalesTaxItem() {
+
+    }
+
+
+    public function processAddSalesTaxItem($response) {
+
     }
 }
 

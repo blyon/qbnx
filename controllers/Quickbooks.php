@@ -11,3 +11,14 @@
 // Include necessary Models.
 require_once dirname(__FILE__) . '/../models/Log.php';
 require_once dirname(__FILE__) . '/../models/Quickbooks.php';
+
+
+/**
+ * Authenticate with Quickbooks Server.
+ *
+ * @return mixed Quickbooks object or false.
+ */
+function quickbooksAuth()
+{
+    return new Quickboks;
+}

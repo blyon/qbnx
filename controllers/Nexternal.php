@@ -39,6 +39,7 @@ function nexternalAuth()
 
 
 /**
+ * Retrieve a list of Customers.
  *
  * @param Nexternal $nx   Nexternal Object Reference.
  * @param type      $from Beginning Time
@@ -81,7 +82,7 @@ function nexternalGetCustomers(Nexternal $nx, $from, $to)
 
 
 /**
- * Download Orders from Nexternal.
+ * Download Orders from Nexternal for a given date range.
  *
  * @param Nexternal $nx   Nexternal Object Reference.
  * @param integer   $from Beginning Time

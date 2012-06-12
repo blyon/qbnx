@@ -358,8 +358,8 @@ class Nexternal
                 }
                 $o->customer        = (string) $order->Customer->CustomerNo;
                 $o->billingAddress  = array(
-                    'name'     => (string) $order->BillTo->Address->Name->FirstName
-                        . ' ' . (string) $order->BillTo->Address->Name->LastName,
+                    'firstName'=> (string) $order->BillTo->Address->Name->FirstName,
+                    'lastName' => (string) $order->BillTo->Address->Name->LastName,
                     'company'  => (string) $order->BillTo->Address->CompanyName,
                     'address'  => (string) $order->BillTo->Address->StreetAddress1,
                     'address2' => (string) $order->BillTo->Address->StreetAddress2,
@@ -370,8 +370,8 @@ class Nexternal
                     'phone'    => (string) $order->BillTo->Address->PhoneNumber,
                 );
                 $o->shippingAddress  = array(
-                    'name'     => (string) $order->ShipTo->Address->Name->FirstName
-                        . ' ' . (string) $order->ShipTo->Address->Name->LastName,
+                    'firstName'=> (string) $order->ShipTo->Address->Name->FirstName,
+                    'lastName' => (string) $order->ShipTo->Address->Name->LastName,
                     'company'  => (string) $order->ShipTo->Address->CompanyName,
                     'address'  => (string) $order->ShipTo->Address->StreetAddress1,
                     'address2' => (string) $order->ShipTo->Address->StreetAddress2,
@@ -493,8 +493,8 @@ class Nexternal
                 $c->type    = (string) $customer->CustomerType;
                 $c->address  = array(
                     'type'     => (string) $customer->Address->Type,
-                    'name'     => (string) $customer->Address->Name->FirstName
-                        . ' ' . (string) $customer->Address->Name->LastName,
+                    'firstName'=> (string) $customer->Address->Name->FirstName,
+                    'lastName' => (string) $customer->Address->Name->LastName,
                     'company'  => (string) $order->Address->CompanyName,
                     'address'  => (string) $order->Address->StreetAddress1,
                     'address2' => (string) $order->Address->StreetAddress2,
@@ -512,4 +512,133 @@ class Nexternal
         return $return;
     }
 
+
+    /**
+     * Send Order to Nexternal.
+     *
+     * @param Order    $order
+     * @param Customer $customer
+     *
+     * @return SimpleXml Object
+     */
+    public function orderCreate(Order $order, Customer $customer)
+    {
+        $this->log->write(Log::DEBUG, "Nexternal::orderCreate(".$order->id.")");
+
+        // Initialize DOM {@see _addCredentials}.
+        $this->_initDom('<OrderCreate/>');
+        // Let Nexternal know these orders are from an external system.
+        $this->dom->OrderCreate->addAttribute('Mode', 'Import');
+
+        $t = $this->dom->OrderCreate->addChild('OrderDate')->addChild('DateTime');
+        $t->addChild('Date', date('m/d/Y', $order->timestamp));
+        $t->addChild('Time', date('h:i', $order->timestamp));
+
+        // Add Customer.
+        $c = $this->dom->OrderCreate->addChild('Customer');
+        $c->addAttribute('MatchingField', 'CustomerNo');
+        $c->addChild('CustomerNo', $customer->id);
+
+        // Add Shipping Info.
+        $s = $this->dom->OrderCreate->addChild('ShipTos')->addChild('ShipTo');
+        $s->addChild('Address')->addChild('Name');
+        $s->Address->Name->addChild('FirstName', $order->billingAddress['firstName']);
+        $s->Address->Name->addChild('LastName', $order->billingAddress['lastName']);
+        $s->Address->addChild('CompanyName', $order->billingAddress['company']);
+        $s->Address->addChild('StreetAddress1', $order->billingAddress['address']);
+        $s->Address->addChild('StreetAddress2', $order->billingAddress['address2']);
+        $s->Address->addChild('City', $order->billingAddress['city']);
+        $s->Address->addChild('StateProvCode', $order->billingAddress['state']);
+        $s->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
+        $s->Address->addChild('CountryCode', $order->billingAddress['country']);
+        $s->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
+
+        // Add Products.
+        $s->addChild('Products');
+        foreach ($order->products as $product) {
+            $p = $s->Products->addChild('Product');
+            $p->addChild('ProductSKU', $product->sku);
+            $p->addChild('Qty', $product->qty);
+            $p->addChild('UnitPrice', $product->price);
+        }
+
+        // Add Discounts.
+        if (isset($order->discounts) && !empty($order->discounts)) {
+            // for some reason you can only apply 1 discount....
+            $sum = 0;
+            foreach ($order->discounts as $discount) {
+                $sum += $discount['value'];
+            }
+            if ($sum) {
+                $this->dom->OrderCreate->addChild('Discounts')->addChild('OrderDiscount', $sum);
+            }
+        }
+
+        // Add Gift Certificates.
+        if (isset($order->giftCerts) && !empty($order->giftCerts)) {
+            $this->dom->OrderCreate->addChild('GiftCertificates');
+            foreach ($order->giftCerts as $cert) {
+                $gc = $this->dom->OrderCreate->GiftCertificates->addChild('GiftCert');
+                $gc->addChild('GiftCertAmount', $cert->amount);
+                $gc->addChild('GiftCertMessage', $cert->code);
+                $gc->addChild('GiftCertRecipient')->addChild('Name');
+                $gc->GiftCertRecipient->Name->addChild('FirstName', $customer->firstName);
+                $gc->GiftCertRecipient->Name->addChild('LastName', $customer->lastName);
+            }
+        }
+
+        // Add Billing Info.
+        $a = $this->dom->OrderCreate->addChild('BillTo')->addChild('Address');
+        $a->addChild('Name');
+        $a->Name->addChild('FirstName', $order->billingAddress['firstName']);
+        $a->Name->addChild('LastName', $order->billingAddress['lastName']);
+        $a->addChild('CompanyName', $order->billingAddress['company']);
+        $a->addChild('StreetAddress1', $order->billingAddress['address']);
+        $a->addChild('StreetAddress2', $order->billingAddress['address2']);
+        $a->addChild('City', $order->billingAddress['city']);
+        $a->addChild('StateProvCode', $order->billingAddress['state']);
+        $a->addChild('ZipPostalCode', $order->billingAddress['zip']);
+        $a->addChild('CountryCode', $order->billingAddress['country']);
+        $a->addChild('PhoneNumber', $order->billingAddress['phone']);
+
+        // Send XML to Nexternal.
+        $responseDom = $this->_sendDom('ordercreate.rest');
+
+        // Return Response Dom.
+        return $responseDom;
+    }
+
+
+    /**
+     * Process Order Create Response.
+     *
+     * @param SimpleXml Object
+     *
+     * @return array
+     */
+    public function orderCreateResponse($dom)
+    {
+        $return = array(
+            'order'     => array(),
+            'errors'    => array(),
+        );
+
+        $return['order'] = array(
+            'status'        => (string) $dom->Order->OrderStatus,
+            'billingStatus' => (string) $dom->Order->BillingStatus,
+        );
+
+        foreach ($dom->Order->attributes() as $attribute => $value) {
+            if ($attribute == 'No') {
+                $return['order']['id'] = $value;
+                break;
+            }
+        }
+
+        if (isset($dom->Order->Warning)) {
+            $return['errors'][] = (string) $dom->Order->Warning;
+        }
+
+        return $return;
+    }
 }

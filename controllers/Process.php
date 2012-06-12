@@ -28,8 +28,11 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
     // Connect to Nexternal.
     $nexternal = nexternalAuth();
 
+    // Connect to Quickbooks.
+    $quickbooks = quickbooksAuth();
+
     // Check for failed auth.
-    if (!$nexternal) {
+    if (!$nexternal || !$quickbooks) {
         return false;
     }
 
