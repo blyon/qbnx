@@ -29,7 +29,10 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
     $nexternal = nexternalAuth();
 
     // Connect to Quickbooks.
-    $quickbooks = quickbooksAuth();
+    $quickbooks = new QuickbooksController();
+    $result = $quickbooks->querySalesReceipt('N124827');
+    print_r($result);
+    return;
 
     // Check for failed auth.
     if (!$nexternal || !$quickbooks) {
