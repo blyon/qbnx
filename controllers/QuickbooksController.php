@@ -32,18 +32,19 @@ class QuickbooksController
 
 
     /**
+     * Query for a specific Sales Receipt.
      *
-     * @param type $invoiceNumber
+     * @param string $id Sales Receipt ID.
      * @return type
      */
-    public function querySalesReceipt($invoiceNumber)
+    public function querySalesReceipt($id)
     {
-        $this->log->write(Log::DEBUG, "Quickbooks::querySalesReceipt(".$invoiceNumber.")");
+        $this->log->write(Log::DEBUG, "Quickbooks::querySalesReceipt(".$id.")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
         // 0-Starts With, 1-Contains, 2-Ends With
         $query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
-        $query->OrTxnQuery->TxnFilter->OrRefNumberFilter->RefNumber->setValue($invoiceNumber);
+        $query->OrTxnQuery->TxnFilter->OrRefNumberFilter->RefNumber->setValue($id);
 
         return $this->_qb->sendRequest();
     }

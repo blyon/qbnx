@@ -19,7 +19,7 @@ class Quickbooks
     /**
      * Get Singleton Instance.
      *
-     * @return
+     * @return Quickbooks.
      */
     public static function getInstance()
     {
@@ -57,33 +57,33 @@ class Quickbooks
      */
     public function __destruct()
     {
-        $this->_sm->EndSession(self::$_ticket);
+        $this->_sm->EndSession($this->_ticket);
         $this->_sm->CloseConnection();
     }
 
 
     /**
-     *
+     * Connect to Quickbooks.
      */
     public function connect()
     {
         $this->log->write(Log::DEBUG, "Quickbooks::connect");
 
         // Create Session Manager.
-        $this->_sm = new COM("QBFC" . self::$_qbfcVersion . ".QBSessionManager");
+        $this->_sm = new COM("QBFC" . $this->_qbfcVersion . ".QBSessionManager");
         // Open Connection.
-        $this->_sm->OpenConnection("", self::$_appName);
+        $this->_sm->OpenConnection("", $this->_appName);
         // Begin Session (ignore multi/single user modes)
         $this->_sm->BeginSession("", 2);
         // Set Message Request.
-        $this->request = self::$_sm->CreateMsgSetRequest("US", $this->_qbfcVersion, 0);
+        $this->request = $this->_sm->CreateMsgSetRequest("US", $this->_qbfcVersion, 0);
         // Allow "continue on error"
         $this->request->Attributes->OnError = 1;
     }
 
 
     /**
-     *
+     * Send Request to Quickbooks.
      */
     public static function sendRequest()
     {
