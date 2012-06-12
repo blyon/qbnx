@@ -7,13 +7,13 @@ require_once dirname(__FILE__) . '/Customer.php';
 class Quickbooks
 {
     private static $__instance;
-    private static $_sm;
-    private static $_qbfcVersion;
-    private static $_ticket;
-    private static $_docroot;
-    private static $_appName;
-    public  static $request;
-    public  static $log;
+    private $_sm;
+    private $_qbfcVersion;
+    private $_ticket;
+    private $_docroot;
+    private $_appName;
+    public  $request;
+    public  $log;
 
 
     /**
