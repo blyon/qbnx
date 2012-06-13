@@ -48,13 +48,16 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
 
     // Download Customers from Nexternal.
     if ($customers) {
-        $nxCustomers = $nexternal->getCustomers($from, $to);
+        $totalCustomers = 0;
+        $nxCustomers    = $nexternal->getCustomers($from, $to);
+        $totalCustomers += count($nxCustomers);
 
         // Check for Cache before sending customers to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_CUSTOMER_CACHE . CACHE_EXT)) {
             // Save orders to cache and process cache.
             Util::writeCache(NEXTERNAL_CUSTOMER_CACHE, serialize($nxCustomers));
             while (null !== ($nxCustomers = Util::readCache(NEXTERNAL_CUSTOMER_CACHE))) {
+                $totalCustomers += count($nxCustomers);
                 print "Send customers to QB from Cache\n";
                 // @TODO: Send to QB.
             }
@@ -62,17 +65,21 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
             // @TODO: Send to QB.
             print "Send customers to QB\n";
         }
+        printf("Total Customers Sent to QB: %d\n", $totalCustomers);
     }
 
     // Download Orders from Nexternal.
     if ($orders) {
-        $nxOrders = $nexternal->getOrders($from, $to);
+        $totalOrders = 0;
+        $nxOrders    = $nexternal->getOrders($from, $to);
+        $totalOrders += count($nxOrders);
 
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_ORDER_CACHE . CACHE_EXT)) {
             // Save orders to cache and process cache.
             Util::writeCache(NEXTERNAL_ORDER_CACHE, serialize($nxOrders));
             while (null !== ($nxOrders = Util::readCache(NEXTERNAL_ORDER_CACHE))) {
+                $totalOrders += count($nxOrders);
                 print "Send orders to QB from Cache\n";
                 // @TODO: Send to QB.
             }
@@ -80,6 +87,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
             // @TODO: Send to QB.
             print "Send orders to QB\n";
         }
+        printf("Total Orders Sent to QB: %d\n", $totalOrders);
     }
 }
 

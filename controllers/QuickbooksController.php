@@ -39,7 +39,7 @@ class QuickbooksController
      */
     public function querySalesReceipt($id)
     {
-        $this->log->write(Log::DEBUG, "Quickbooks::querySalesReceipt(".$id.")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$id.")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
         // 0-Starts With, 1-Contains, 2-Ends With
@@ -59,14 +59,14 @@ class QuickbooksController
      */
     public function processSalesReceiptQuery($invoiceNumber, $response)
     {
-        self::$log->write(Log::DEBUG, "Quickbooks::processSalesReceiptQuery(".$invoiceNumber.")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$invoiceNumber.")");
 
         if (!$response->ResponseList->Count) {
-            self::$log->write(Log::ERROR, "Failed to retrieve SalesReceipt List for invoice: " . $invoiceNumber);
+            $this->log->write(Log::ERROR, "Failed to retrieve SalesReceipt List for invoice: " . $invoiceNumber);
             return false;
         }
         if (preg_match("/did not find/", $response->ResponseList->GetAt(0)->StatusMessage)) {
-            self::$log->write(Log::NOTICE, "No SalesReceipts for invoice: " . $invoiceNumber);
+            $this->log->write(Log::NOTICE, "No SalesReceipts for invoice: " . $invoiceNumber);
             return false;
         }
         return true;
@@ -75,7 +75,8 @@ class QuickbooksController
 
     public function addSalesReceipt(Order $order)
     {
-        $request = self::$_request->AppendSalesReceiptAddRq();
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        $request = $this->_qb->request->AppendSalesReceiptAddRq();
 
         // General Sales Receipt Info.
         $request->DepositToAccountRef->FullName;
@@ -143,16 +144,19 @@ class QuickbooksController
      * @param type $response
      */
     public function processAddSalesReceipt($response) {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
     }
 
 
     public function addSalesTaxItem() {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
     }
 
 
     public function processAddSalesTaxItem($response) {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
     }
 }

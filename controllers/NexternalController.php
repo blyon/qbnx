@@ -97,7 +97,7 @@ class NexternalController
 
             // write Customers to File if we've reached our cache cap.
             if (MEMORY_CAP <= memory_get_usage()) {
-                writeCache(NEXTERNAL_CUSTOMER_CACHE, serialize($customers));
+                Util::writeCache(NEXTERNAL_CUSTOMER_CACHE, serialize($customers));
                 $customers = array();
             }
         }
@@ -144,7 +144,7 @@ class NexternalController
 
             // write Orders to File if we've reached our cache cap.
             if (MEMORY_CAP <= memory_get_usage()) {
-                writeCache(NEXTERNAL_ORDER_CACHE, serialize($orders));
+                Util::writeCache(NEXTERNAL_ORDER_CACHE, serialize($orders));
                 $orders = array();
             }
         }
