@@ -21,7 +21,7 @@ class Log
     public function __destruct()
     {
         if ($this->_fh) {
-            $this->close(_);
+            $this->close($this->_fh);
         }
     }
 

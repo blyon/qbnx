@@ -16,7 +16,7 @@ require_once dirname(__FILE__) . '/../models/Quickbooks.php';
 class QuickbooksController
 {
     private $_qb;
-    private $log;
+    public $log;
 
 
     /**

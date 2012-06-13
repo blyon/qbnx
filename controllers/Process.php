@@ -9,7 +9,7 @@
  */
 
 require_once dirname(__FILE__) . '/Util.php';
-require_once dirname(__FILE__) . '/Nexternal.php';
+require_once dirname(__FILE__) . '/NexternalController.php';
 require_once dirname(__FILE__) . '/QuickbooksController.php';
 
 
@@ -25,23 +25,31 @@ require_once dirname(__FILE__) . '/QuickbooksController.php';
  */
 function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
 {
+    $log = Log::getInstance();
+
     // Connect to Nexternal.
-    $nexternal = nexternalAuth();
+    $nexternal = new NexternalController();
 
-    // Connect to Quickbooks.
-    $quickbooks = new QuickbooksController();
-    $result = $quickbooks->querySalesReceipt('N124827');
-    print_r($result);
-    return;
-
-    // Check for failed auth.
-    if (!$nexternal || !$quickbooks) {
+    // Authenticate with Nexternal.
+    if (!$nexternal->authenticate()) {
         return false;
     }
 
+
+    // Connect to Quickbooks.
+    //$quickbooks = new QuickbooksController();
+    //$result = $quickbooks->querySalesReceipt('N124827');
+    //print_r($result);
+    //return;
+
+    // Check for failed auth.
+    //if (!$nexternal || !$quickbooks) {
+        //return false;
+    //}
+
     // Download Customers from Nexternal.
     if ($customers) {
-        $nxCustomers = nexternalGetCustomers($nexternal, $from, $to);
+        $nxCustomers = $nexternal->getCustomers($from, $to);
 
         // Check for Cache before sending customers to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_CUSTOMER_CACHE . CACHE_EXT)) {
@@ -59,7 +67,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
 
     // Download Orders from Nexternal.
     if ($orders) {
-        $nxOrders = nexternalGetOrders($nexternal, $from, $to);
+        $nxOrders = nexternalGetOrders($from, $to);
 
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_ORDER_CACHE . CACHE_EXT)) {
