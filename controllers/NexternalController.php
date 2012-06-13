@@ -32,6 +32,7 @@ class NexternalController
 
 
     /**
+     * Authenticate with Nexternal Server.
      *
      * @return boolean
      */
@@ -66,8 +67,8 @@ class NexternalController
     /**
      * Retrieve a list of Customers.
      *
-     * @param type      $from Beginning Time
-     * @param type      $to   End Time
+     * @param type $from Beginning Time
+     * @param type $to   End Time
      *
      * @return array of Customers.
      */
@@ -108,8 +109,8 @@ class NexternalController
     /**
      * Download Orders from Nexternal for a given date range.
      *
-     * @param integer   $from Beginning Time
-     * @param integer   $to   End Time
+     * @param integer $from Beginning Time
+     * @param integer $to   End Time
      *
      * @return array of Orders.
      */
@@ -121,8 +122,8 @@ class NexternalController
         $orders    = array();
         while ($morePages) {
             $page++;
-            $response = $this->_nx->processOrderQueryResponse(
-                $this->_nx->orderQuery(
+            $response = $this->_processOrderQueryResponse(
+                $this->_orderQuery(
                     $from,
                     $to,
                     Nexternal::BILLSTAT_PAID,
@@ -239,7 +240,7 @@ class NexternalController
      * Process Authentication Verification Response.
      * Set Authentication Active Key.
      *
-     * @param SimpleXml Object  $responseDom
+     * @param SimpleXml $responseDom
      *
      * @return boolean
      */
@@ -261,14 +262,14 @@ class NexternalController
     /**
      * Query Nexternal for Orders.
      *
-     * @param integer   $startDate
-     * @param integer   $endDate
-     * @param string    $billingStatus
-     * @param integer   $page
+     * @param integer $startDate
+     * @param integer $endDate
+     * @param string  $billingStatus
+     * @param integer $page
      *
-     * @return SimpleXml Object response.
+     * @return SimpleXml response.
      */
-    public function orderQuery($startDate, $endDate, $billingStatus=null, $page=1)
+    private function _orderQuery($startDate, $endDate, $billingStatus=null, $page=1)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
@@ -315,11 +316,11 @@ class NexternalController
     /**
      * Process Order Query Response.
      *
-     * @param SimpleXml Object
+     * @param SimpleXml
      *
      * @return array
      */
-    public function processOrderQueryResponse($dom)
+    private function _processOrderQueryResponse($dom)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
@@ -429,9 +430,9 @@ class NexternalController
     /**
      * Query Nexternal for Customers.
      *
-     * @param integer   $startDate
-     * @param integer   $endDate
-     * @param integer   $page
+     * @param integer $startDate
+     * @param integer $endDate
+     * @param integer $page
      *
      * @return SimpleXml Object
      */
@@ -468,7 +469,7 @@ class NexternalController
     /**
      * Process Customer Query Response.
      *
-     * @param SimpleXml Object
+     * @param SimpleXml
      *
      * @return array
      */
@@ -614,7 +615,7 @@ class NexternalController
     /**
      * Process Order Create Response.
      *
-     * @param SimpleXml Object
+     * @param SimpleXml
      *
      * @return array
      */

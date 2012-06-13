@@ -32,12 +32,11 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
 
     // Authenticate with Nexternal.
     if (!$nexternal->authenticate()) {
-        return false;
+        throw new Exception("Nexternal Authentication Failed.");
     }
 
-
     // Connect to Quickbooks.
-    //$quickbooks = new QuickbooksController();
+    $quickbooks = new QuickbooksController();
     //$result = $quickbooks->querySalesReceipt('N124827');
     //print_r($result);
     //return;
@@ -67,7 +66,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
 
     // Download Orders from Nexternal.
     if ($orders) {
-        $nxOrders = nexternalGetOrders($from, $to);
+        $nxOrders = $nexternal->getOrders($from, $to);
 
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_ORDER_CACHE . CACHE_EXT)) {
