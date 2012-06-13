@@ -9,8 +9,8 @@
  */
 
 require_once dirname(__FILE__) . '/Util.php';
-require_once dirname(__FILE__) . '/NexternalController.php';
-require_once dirname(__FILE__) . '/QuickbooksController.php';
+require_once dirname(__FILE__) . '/../controllers/NexternalController.php';
+require_once dirname(__FILE__) . '/../controllers/QuickbooksController.php';
 
 
 /**
@@ -36,7 +36,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
     }
 
     // Connect to Quickbooks.
-    $quickbooks = new QuickbooksController();
+    //$quickbooks = new QuickbooksController();
     //$result = $quickbooks->querySalesReceipt('N124827');
     //print_r($result);
     //return;
@@ -53,8 +53,8 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
         // Check for Cache before sending customers to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_CUSTOMER_CACHE . CACHE_EXT)) {
             // Save orders to cache and process cache.
-            writeCache(NEXTERNAL_CUSTOMER_CACHE, serialize($nxCustomers));
-            while (null !== ($nxCustomers = readCache(NEXTERNAL_CUSTOMER_CACHE))) {
+            Util::writeCache(NEXTERNAL_CUSTOMER_CACHE, serialize($nxCustomers));
+            while (null !== ($nxCustomers = Util::readCache(NEXTERNAL_CUSTOMER_CACHE))) {
                 print "Send customers to QB from Cache\n";
                 // @TODO: Send to QB.
             }
@@ -71,8 +71,8 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_ORDER_CACHE . CACHE_EXT)) {
             // Save orders to cache and process cache.
-            writeCache(NEXTERNAL_ORDER_CACHE, serialize($nxOrders));
-            while (null !== ($nxOrders = readCache(NEXTERNAL_ORDER_CACHE))) {
+            Util::writeCache(NEXTERNAL_ORDER_CACHE, serialize($nxOrders));
+            while (null !== ($nxOrders = Util::readCache(NEXTERNAL_ORDER_CACHE))) {
                 print "Send orders to QB from Cache\n";
                 // @TODO: Send to QB.
             }

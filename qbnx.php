@@ -23,8 +23,8 @@
 
 // Include the Controllers.
 require_once dirname(__FILE__) . '/constants.php';
-require_once dirname(__FILE__) . '/controllers/Util.php';
-require_once dirname(__FILE__) . '/controllers/Process.php';
+require_once dirname(__FILE__) . '/includes/Util.php';
+require_once dirname(__FILE__) . '/includes/Process.php';
 
 
 // Script Arguments.
@@ -37,15 +37,15 @@ $args = array(
 
 
 // Parse user entered Arguments.
-parseArgs($args);
+Util::parseArgs($args);
 
 
 // Check for required args, help, and valid time.
 if ($args['h']
     || (!$args['q'] && !$args['n'])
-    || !validateTime($args['t'])
+    || !Util::validateTime($args['t'])
 ) {
-    showHelp();
+    Util::showHelp();
     exit();
 }
 
@@ -53,7 +53,7 @@ if ($args['h']
 // Check for Quickbooks Argument.
 if ($args['q']) {
     pushNexternalToQuickbooks(
-        START_TIME - convertTime($args['t']),
+        START_TIME - Util::convertTime($args['t']),
         START_TIME,
         true,
         true
@@ -64,7 +64,7 @@ if ($args['q']) {
 // Check for Nexternal Argument.
 if ($args['n']) {
     pushQuickbooksToNexternal(
-        START_TIME - convertTime($args['t']),
+        START_TIME - Util::convertTime($args['t']),
         START_TIME,
         true,
         true
