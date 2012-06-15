@@ -57,7 +57,7 @@ class Quickbooks
      */
     public function __destruct()
     {
-        $this->_sm->EndSession($this->_ticket);
+        //$this->_sm->EndSession($this->_ticket);
         $this->_sm->CloseConnection();
     }
 
