@@ -24,6 +24,8 @@ class Nexternal
     const AUTHSTEP_ACTIVE       = 'active';
     const KEYTYPE_NODE          = 'Node';
     const KEYTYPE_ATTRIBUTE     = 'Attribute';
+    const CUSTUPDATE_MAX        = 15;
+    const ORDERUPDATE_MAX       = 15;
 
     private static $__instance;
     /**

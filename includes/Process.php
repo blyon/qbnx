@@ -80,6 +80,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
             Util::writeCache(NEXTERNAL_ORDER_CACHE, serialize($nxOrders));
             while (null !== ($nxOrders = Util::readCache(NEXTERNAL_ORDER_CACHE))) {
                 $totalOrders += count($nxOrders);
+                print_r(end($nxOrders));
                 print "Send orders to QB from Cache\n";
                 // @TODO: Send to QB.
             }

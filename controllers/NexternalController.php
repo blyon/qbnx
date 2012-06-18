@@ -154,6 +154,90 @@ class NexternalController
 
 
     /**
+     * Create Customers on Nexternal.
+     *
+     * Note: Only 15 customers can be created per transaction, the customers
+     * array will be processed in blocks of 15.
+     *
+     * @param boolean
+     */
+    public function createCustomers($customers)
+    {
+        // Get the arraykey of the last customer.
+        $lastCustomer = end(array_keys($customers));
+
+        // Loop over the customers array.
+        foreach ($customers as $cid => $customer) {
+            // Make sure this is a valid customer object.
+            if (!($customer instanceof Customer)) {
+                $this->log->write(Log::CRIT, "One or more customers passed to ".__FUNCTION__." is not an instance of Customer");
+            }
+            // Add Customer to Queue.
+            $this->_customerCreate($customer);
+
+            // Send XML to Nexternal if we have 15 customers in the queue, or if
+            // this is the last customer in the array.
+            $customersInQueue = count($this->nx->dom->children('Customer'));
+            if (Nexternal::CUSTUPDATE_MAX == $customersInQueue
+                || $cid == $lastCustomer
+            ) {
+                $response = $this->_processCustomerCreateResponse($this->_nx->sendDom('customerupdate.rest'));
+                if (!empty($response['errors'])) {
+                    return false;
+                }
+                if (count($response['customers']) != $customersInQueue) {
+                    $this->log->write(Log::ERROR, sptrinf("The number of customers returned from CustomerCreate[%d] does not match the number of Customers Sent[%d]", count($response['customers'], $customersInQueue)));
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Create Orders on Nexternal.
+     *
+     * Note: Only 15 orders can be created per transaction, the orders array
+     * will be processed in blocks of 15.
+     *
+     * @param boolean
+     */
+    public function createOrders($orders)
+    {
+        // Get the arraykey of the last customer.
+        $lastOrder = end(array_keys($orders));
+
+        // Loop over the customers array.
+        foreach ($orders as $cid => $order) {
+            // Make sure this is a valid customer object.
+            if (!($order instanceof Order)) {
+                $this->log->write(Log::CRIT, "One or more orders passed to ".__FUNCTION__." is not an instance of Order");
+            }
+            // Add Order to Queue.
+            $this->_orderCreate($order);
+
+            // Send XML to Nexternal if we have 15 customers in the queue, or if
+            // this is the last customer in the array.
+            $ordersInQueue = count($this->nx->dom->children('Order'));
+            if (Nexternal::ORDERUPDATE_MAX == $ordersInQueue
+                || $cid == $lastOrder
+            ) {
+                $response = $this->_processOrder($this->_nx->sendDom('customerupdate.rest'));
+                if (!empty($response['errors'])) {
+                    return false;
+                }
+                if (count($response['orders']) != $ordersInQueue) {
+                    $this->log->write(Log::ERROR, sptrinf("The number of orders returned from Order[%d] does not match the number of Order Sent[%d]", count($response['corders'], $ordersInQueue)));
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+    /**
      * Send Authentication Request to Nexternal.
      *
      * @return SimpleXML object.
@@ -189,6 +273,13 @@ class NexternalController
     private function _processAuthenticationResponse($responseDom)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+
+        // Check for Errors.
+        if (count($responseDom->children('Errors'))) {
+            $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
+            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $responseDom->Errors->ErrorDescription));
+            return false;
+        }
 
         // Get Key Type.
         foreach ($responseDom->attributes() as $attribute => $value) {
@@ -247,6 +338,13 @@ class NexternalController
     private function _processVerificationResponse($responseDom)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+
+        // Check for Errors.
+        if (count($responseDom->children('Errors'))) {
+            $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
+            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $responseDom->Errors->ErrorDescription));
+            return false;
+        }
 
         // Update _authStep.
         $this->_nx->authStep = Nexternal::AUTHSTEP_ACTIVE;
@@ -331,7 +429,12 @@ class NexternalController
         );
 
         // Process Errors.
-        // @TODO.
+        if (count($dom->children('Errors'))) {
+            $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
+            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
+            $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
+            return $return;
+        }
 
         // Check for More Pages.
         $return['morePages'] = isset($dom->NextPage);
@@ -482,7 +585,13 @@ class NexternalController
         );
 
         // Process Errors.
-        // @TODO.
+        if (count($dom->children('Errors'))) {
+            $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
+            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
+            $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
+            return $return;
+        }
+
 
         // Check for More Pages.
         $return['morePages'] = isset($dom->NextPage);
@@ -517,6 +626,80 @@ class NexternalController
 
 
     /**
+     * Prepare Customer for creation on Nexternal.
+     *
+     * @param Customer $customer Valid Customer to add.
+     *
+     * @return boolean TRUE if customer added to request queue.
+     */
+    private function _customerCreate(Customer $customer)
+    {
+        if ($this->_nx->dom->getName() != 'CustomerUpdateRequest') {
+            // Initialize DOM {@see _addCredentials}.
+            $this->_nx->initDom('<CustomerUpdateRequest/>');
+        }
+
+        // Make sure we won't go over the maximum number of customers per request.
+        if (1 + count($this->_nx->dom->children('Customer') > Nexternal::CUSTUPDATE_MAX)) {
+            $this->log->write(Log::ERROR, sptrinf("Maximum number of Customers [%d] already added to CustomerUpdateRequest", Nexternal::CUSTUPDATE_MAX));
+            return false;
+        }
+
+        // Add Customer to DOM.
+        $nxCust = $this->_nx->dom->addChild('Customer')->addAttribute('Mode', 'Add')->addAttribute('MatchingField', 'Email');
+        $nxCust->addChild('Name');
+        $nxCust->Name->addChild('FirstName', $customer->firstName);
+        $nxCust->Name->addChild('LastName', $customer->lastName);
+        $nxCust->addChild('Email', $customer->email);
+        $nxCust->addChild('CustomerType', $customer->type);
+
+        return true;
+    }
+
+
+    /**
+     * Process Customer Create Response.
+     *
+     * @param SimpleXml
+     *
+     * @return array
+     */
+    private function _processCustomerCreateResponse($dom)
+    {
+        $return = array(
+            'customers' => array(),
+            'errors'    => array(),
+        );
+
+        // Process Errors.
+        if (count($dom->children('Errors'))) {
+            $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
+            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
+            $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
+            return $return;
+        }
+
+
+        // Check for More Pages.
+        $return['morePages'] = isset($dom->NextPage);
+
+        // Process Customers.
+        if (isset($dom->Customer)) {
+            foreach ($dom->Customer as $customer) {
+                $c = new Customer;
+                $c->id      = (string) $customer->CustomerNo;
+                $c->email   = (string) $customer->Email;
+                $c->type    = (string) $customer->CustomerType;
+
+                $return['customers'][] = $c;
+            }
+        }
+
+        return $return;
+    }
+
+
+    /**
      * Send Order to Nexternal.
      *
      * @param Order    $order
@@ -524,9 +707,15 @@ class NexternalController
      *
      * @return SimpleXml Object
      */
-    public function orderCreate(Order $order, Customer $customer)
+    private function _orderCreate(Order $order, Customer $customer)
     {
-        $this->log->write(Log::DEBUG, "Nexternal::orderCreate(".$order->id.")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$order->id.")");
+
+        // Make sure we won't go over the maximum number of customers per request.
+        if (1 + count($this->_nx->dom->children('Customer') > Nexternal::CUSTUPDATE_MAX)) {
+            $this->log->write(Log::ERROR, sptrinf("Maximum number of Customers [%d] already added to CustomerUpdateRequest", Nexternal::CUSTUPDATE_MAX));
+            return false;
+        }
 
         // Initialize DOM {@see _addCredentials}.
         $this->_initDom('<OrderCreate/>');
