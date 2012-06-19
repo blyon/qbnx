@@ -25,7 +25,9 @@ require_once dirname(__FILE__) . '/../controllers/QuickbooksController.php';
  */
 function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
 {
-    $log = Log::getInstance();
+    $log            = Log::getInstance();
+    $totalCustomers = 0;
+    $totalOrders    = 0;
 
     // Connect to Nexternal.
     $nexternal = new NexternalController();
@@ -47,8 +49,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
     //}
 
     // Download Customers from Nexternal.
-    if ($customers) {
-        $totalCustomers = 0;
+    /*if ($customers) {
         $nxCustomers    = $nexternal->getCustomers($from, $to);
         $totalCustomers += count($nxCustomers);
 
@@ -66,13 +67,13 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
             print "Send customers to QB\n";
         }
         printf("Total Customers Sent to QB: %d\n", $totalCustomers);
-    }
+    }*/
 
     // Download Orders from Nexternal.
     if ($orders) {
-        $totalOrders = 0;
         $nxOrders    = $nexternal->getOrders($from, $to);
         $totalOrders += count($nxOrders);
+        $nxCustomers = array();
 
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . NEXTERNAL_ORDER_CACHE . CACHE_EXT)) {
@@ -80,13 +81,27 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
             Util::writeCache(NEXTERNAL_ORDER_CACHE, serialize($nxOrders));
             while (null !== ($nxOrders = Util::readCache(NEXTERNAL_ORDER_CACHE))) {
                 $totalOrders += count($nxOrders);
-                print_r(end($nxOrders));
+                // Get Order Customers.
+                foreach ($nxOrders as $nxOrder) {
+                    // Get Customer.
+                    if (!array_key_exists($nxOrder->customer, $nxCustomers)) {
+                        $nxCustomers[$nxOrder->customer] = $nexternal->getCustomer($nxOrder->customer);
+                    }
+                }
                 print "Send orders to QB from Cache\n";
                 // @TODO: Send to QB.
             }
         } else {
-            // @TODO: Send to QB.
+            // Get Order Customers.
+            foreach ($nxOrders as $nxOrder) {
+                // Get Customer.
+                if (!array_key_exists($nxOrder->customer, $nxCustomers)) {
+                    $nxCustomers[$nxOrder->customer] = $nexternal->getCustomer($nxOrder->customer);
+                }
+            }
+            print_r(end($nxOrders));
             print "Send orders to QB\n";
+            // @TODO: Send to QB.
         }
         printf("Total Orders Sent to QB: %d\n", $totalOrders);
     }

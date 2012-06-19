@@ -183,11 +183,12 @@ class QuickbooksController
         // Products.
         foreach ($order->products as $product) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName   = $product->name();
-            $lineItem->SalesReceiptLineAdd->Desc                = $product->description();
-            $lineItem->SalesReceiptLineAdd->Amount              = $product->total();
-            $lineItem->SalesReceiptLineAdd->Quantity            = $product->quantity();
-            $lineItem->SalesReceiptLineAdd->ServiceDate         = $order->date();
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName           = $product->name();
+            $lineItem->SalesReceiptLineAdd->Desc                        = $product->description();
+            $lineItem->SalesReceiptLineAdd->Amount                      = $product->total();
+            $lineItem->SalesReceiptLineAdd->Quantity                    = $product->quantity();
+            $lineItem->SalesReceiptLineAdd->ServiceDate                 = $order->date();
+            $lineItem->SalesReceiptLineAdd->InventorySiteRef->FullName  = "Main";
         }
         // Gift Certificates.
         foreach ($order->giftCerts as $gc) {
