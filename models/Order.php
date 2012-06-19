@@ -18,6 +18,7 @@ class Order
     public $customer;
     public $billingAddress;
     public $shippingAddress;
+    public $qbTxn;
     public $products        = array();
     public $discounts       = array();
     public $giftCerts       = array();

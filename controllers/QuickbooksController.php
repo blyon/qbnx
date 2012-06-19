@@ -31,17 +31,55 @@ class QuickbooksController
     }
 
 
-    public function getSalesReceipt($id)
+    /**
+     * Get Sales Receipt by Quickbooks Transaction ID.
+     *
+     * @param type $txn Quickbooks Transaction ID
+     *
+     * @return array Array of Order Objects.
+     */
+    public function getSalesReceiptByTxn($txn)
     {
-        $this->_createSalesReceiptQuery($id);
-        $this->_processSalesReceiptQueryResponse($id, $this->_qb->sendRequest());
+        return $this->_processSalesReceiptQueryResponse(
+            $this->_createSalesReceiptQuery($txn, null)
+        );
+    }
+
+
+    /**
+     * Get Sales Receipt by Order ID.
+     *
+     * @param type $id Order ID
+     *
+     * @return array Array of Order Objects.
+     */
+    public function getSalesReceiptByOrderId($id)
+    {
+        return $this->_processSalesReceiptQueryResponse(
+            $this->_createSalesReceiptQuery(null, $id)
+        );
     }
 
 
     public function addSalesReceipt($order, $customer)
     {
-        $this->_createSalesReceiptFromOrder($order, $customer);
-        $this->_processSalesReceiptAddResponse($this->_qb->sendRequest());
+        return $this->_processSalesReceiptAddResponse(
+            $this->_createSalesReceiptFromOrder($order, $customer)
+        );
+    }
+
+
+    /**
+     * Update Sales Receipt from Order.
+     *
+     * @param type  $txn   Quickbooks Transaction ID
+     * @param Order $order Values to set to Order.
+     */
+    public function updateSalesReceipt($txn, $order)
+    {
+        return $this->_processSalesReceiptUpdateResponse(
+            $this->_createSalesReceiptUpdate($txn, $order)
+        );
     }
 
 
@@ -51,37 +89,42 @@ class QuickbooksController
      * @param string $id Sales Receipt ID.
      * @return type
      */
-    public function _createSalesReceiptQuery($id)
+    public function _createSalesReceiptQuery($txnId=null, $refId=null)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$id.")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
+        if ($txnId) {
+            $query->ORTxnQuery->TxnFilter->TxnIDList->setValue($txnId);
+        }
+        if ($refId) {
+            $query->ORTxnQuery->TxnFilter->RefNumberList->setValue($refId);
+        }
         // 0-Starts With, 1-Contains, 2-Ends With
-        $query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
-        $query->ORTxnQuery->TxnFilter->OrRefNumberFilter->RefNumberFilter->RefNumber->setValue($id);
+        //$query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
+        //$query->ORTxnQuery->TxnFilter->OrRefNumberFilter->RefNumberFilter->RefNumber->setValue($id);
 
         return $this->_qb->sendRequest();
     }
 
 
     /**
-     * @TODO: Refactor to return Order object.
+     * Parse Sales Receipt Query Response.
      *
-     * @param type $invoiceNumber
      * @param type $response
      * @return array Array of Order Objects.
      */
-    public function _processSalesReceiptQueryResponse($invoiceNumber, $response)
+    public function _processSalesReceiptQueryResponse($response)
     {
-        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$invoiceNumber.")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $orders = array();
 
         if (!$response->ResponseList->Count) {
-            $this->log->write(Log::ERROR, "Failed to retrieve SalesReceipt List for invoice: " . $invoiceNumber);
+            $this->log->write(Log::ERROR, "Failed to retrieve SalesReceipt List");
             return $orders;
         }
         if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
-            $this->log->write(Log::NOTICE, "No SalesReceipts for invoice: " . $invoiceNumber);
+            $this->log->write(Log::NOTICE, "No SalesReceipts found");
             $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
             return $orders;
         }
@@ -89,6 +132,7 @@ class QuickbooksController
         for ($i=0; $i<$response->ResponseList->Count; $i++) {
             $d = $response->ResponseList->GetAt($i)->Detail;
             $o = new Order;
+            $o->qbTxn           = $d->TxnID->getValue;
             $o->id              = $d->RefNumber->getValue;
             $o->timestamp       = $d->TxnDate->getValue;
             //$o->type;
@@ -136,7 +180,7 @@ class QuickbooksController
             }
 
         }
-        return true;
+        return $orders;
     }
 
 
@@ -147,7 +191,7 @@ class QuickbooksController
      * @param Order $order
      * @param Customer $customer
      *
-     * @return void
+     * @return type
      */
     public function _createSalesReceiptFromOrder(Order $order, Customer $customer)
     {
@@ -155,82 +199,178 @@ class QuickbooksController
         $request = $this->_qb->request->AppendSalesReceiptAddRq();
 
         // General Sales Receipt Info.
-        $request->DepositToAccountRef->FullName = $customer->fullName();
-        $request->RefNumber                     = $order->id;
-        $request->TxnDate                       = $order->date();
-        $request->CustomerRef->FullName         = $customer->fullName();
-        $request->Memo                          = $order->memo();
+        $request->DepositToAccountRef->FullName->setValue( $customer->fullName());
+        $request->RefNumber->setValue(                    "N" . preg_replace("/^N/", "", $order->id));
+        $request->TxnDate->setValue(                      $order->date());
+        $request->CustomerRef->FullName->setValue(        $customer->fullName());
+        $request->Memo->setValue(                         $order->memo());
         // Payment Method.
-        $request->PaymentMethodRef->FullName    = $order->cardType();
+        $request->PaymentMethodRef->FullName->setValue(   $order->cardType());
         // Sales Tax.
-        $request->ItemSalesTaxRef->FullName     = $order->taxName();
+        $request->ItemSalesTaxRef->FullName->setValue(    $order->taxName());
         // Billing Address.
-        $request->BillAddress->Addr1            = $order->billingAddress();
-        $request->BillAddress->Addr2            = $order->billingAddress2();
-        $request->BillAddress->City             = $order->billingCity();
-        $request->BillAddress->State            = $order->billingState();
-        $request->BillAddress->PostalCode       = $order->billingZip();
-        $request->BillAddress->Country          = $order->billingCountry();
-        $request->BillAddress->Note             = $order->billingNote();
+        $request->BillAddress->Addr1->setValue(           $order->billingAddress());
+        $request->BillAddress->Addr2->setValue(           $order->billingAddress2());
+        $request->BillAddress->City->setValue(            $order->billingCity());
+        $request->BillAddress->State->setValue(           $order->billingState());
+        $request->BillAddress->PostalCode ->setValue(     $order->billingZip());
+        $request->BillAddress->Country->setValue(         $order->billingCountry());
+        $request->BillAddress->Note->setValue(            $order->billingNote());
         // Shipping Address.
-        $request->ShipAddress->Addr1            = $order->shippingAddress();
-        $request->ShipAddress->Addr2            = $order->shippingAddress2();
-        $request->ShipAddress->City             = $order->shippingCity();
-        $request->ShipAddress->State            = $order->shippingState();
-        $request->ShipAddress->PostalCode       = $order->shippingZip();
-        $request->ShipAddress->Country          = $order->shippingCountry();
-        $request->ShipAddress->Note             = $order->shippingNote();
+        $request->ShipAddress->Addr1->setValue(           $order->shippingAddress());
+        $request->ShipAddress->Addr2->setValue(           $order->shippingAddress2());
+        $request->ShipAddress->City->setValue(            $order->shippingCity());
+        $request->ShipAddress->State->setValue(           $order->shippingState());
+        $request->ShipAddress->PostalCode->setValue(      $order->shippingZip());
+        $request->ShipAddress->Country->setValue(         $order->shippingCountry());
+        $request->ShipAddress->Note->setValue(            $order->shippingNote());
         // Products.
         foreach ($order->products as $product) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName           = $product->name();
-            $lineItem->SalesReceiptLineAdd->Desc                        = $product->description();
-            $lineItem->SalesReceiptLineAdd->Amount                      = $product->total();
-            $lineItem->SalesReceiptLineAdd->Quantity                    = $product->quantity();
-            $lineItem->SalesReceiptLineAdd->ServiceDate                 = $order->date();
-            $lineItem->SalesReceiptLineAdd->InventorySiteRef->FullName  = "Main";
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(           $product->name());
+            $lineItem->SalesReceiptLineAdd->Desc->setValue(                        $product->description());
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(                      $product->total());
+            $lineItem->SalesReceiptLineAdd->Quantity->setValue(                    $product->quantity());
+            $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(                 $order->date());
+            $lineItem->SalesReceiptLineAdd->InventorySiteRef->FullName->setValue(  "Main");
         }
         // Gift Certificates.
         foreach ($order->giftCerts as $gc) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName   = $gc->name();
-            $lineItem->SalesReceiptLineAdd->Desc                = $gc->description();
-            $lineItem->SalesReceiptLineAdd->Amount              = $gc->amount();
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   $gc->name());
+            $lineItem->SalesReceiptLineAdd->Desc->setValue(                $gc->description());
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(              $gc->amount());
         }
         // Discounts.
         foreach ($order->discounts as $discount) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName   = $discount->name();
-            $lineItem->SalesReceiptLineAdd->Desc                = $discount->description();
-            $lineItem->SalesReceiptLineAdd->Amount              = $discount->total();
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   $discount->name());
+            $lineItem->SalesReceiptLineAdd->Desc->setValue(                $discount->description());
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount->total());
         }
         // Shipping Cost.
         $lineItem = $request->ORSalesReceiptLineAddList->Append();
-        $lineItem->SalesReceiptLineAdd->ItemRef->FullName   = "SHIPPING";
-        $lineItem->SalesReceiptLineAdd->Desc                = "Shipping & Handling";
-        $lineItem->SalesReceiptLineAdd->Amount              = $order->shipTotal();
-        $lineItem->SalesReceiptLineAdd->ServiceDate         = $order->date();
+        $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   "SHIPPING");
+        $lineItem->SalesReceiptLineAdd->Desc->setValue(                "Shipping & Handling");
+        $lineItem->SalesReceiptLineAdd->Amount->setValue(              $order->shipTotal());
+        $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(         $order->date());
+
+        return $this->_qb->sendRequest();
     }
 
 
     /**
+     * Process Sales Receipt Add Response.
      *
      * @param type $response
+     *
+     * @return mixed Order object or False on Failure.
      */
-    public function processAddSalesReceipt($response) {
+    private function _processSalesReceiptAddResponse($response)
+    {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
+        if (!$response->ResponseList->Count) {
+            $this->log->write(Log::ERROR, "Failed to retrieve SalesReceipt Create Response");
+            return false;
+        }
+        if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
+            $this->log->write(Log::NOTICE, "Failed to create Sales Receipt");
+            $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            return false;
+        }
+
+        $d = $response->ResponseList->GetAt($i)->Detail;
+        $o = new Order;
+        $o->qbTxn           = $d->TxnID->getValue;
+        $o->id              = $d->RefNumber->getValue;
+        $o->timestamp       = $d->TxnDate->getValue;
+        //$o->type;
+        //$o->status;
+        $o->subTotal        = $d->Subtotal->getValue;
+        $o->taxTotal        = $d->SalesTaxTotal->getValue;
+        //$o->shipTotal;
+        $o->total           = $d->TotalAmount->getValue;
+        $o->memo            = $d->Memo->getValue;
+        $o->location;
+        $o->ip;
+        $o->paymentStatus;
+        $o->paymentMethod;
+        $o->customer;
+        $o->billingAddress  = array(
+            'address'   => $d->BillAddress->Addr1->getValue,
+            'address2'  => $d->BillAddress->Addr2->getValue,
+            'city'      => $d->BillAddress->City->getValue,
+            'state'     => $d->BillAddress->State->getValue,
+            'zip'       => $d->BillAddress->PostalCode->getValue,
+            'country'   => $d->BillAddress->Country->getValue,
+        );
+        $o->shippingAddress = array(
+            'address'   => $d->ShipAddress->Addr1->getValue,
+            'address2'  => $d->ShipAddress->Addr2->getValue,
+            'city'      => $d->ShipAddress->City->getValue,
+            'state'     => $d->ShipAddress->State->getValue,
+            'zip'       => $d->ShipAddress->PostalCode->getValue,
+            'country'   => $d->ShipAddress->Country->getValue,
+        );
+        $o->products        = array();
+        $o->discounts       = array();
+        $o->giftCerts       = array();
+        for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
+            $line = $d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
+            $item = array(
+                'type'      => $line->ItemRef->ListID->getValue,
+                'name'      => $line->ItemRef->FullName->getValue,
+                'qty'       => $line->ItemRef->Quantity->getValue,
+                'price'     => $line->ItemRef->Amount->getValue,
+                'tracking'  => $line->ItemRef->Other1,
+            );
+            // @TODO: Product, Discount, or Gift Cert?
+            $o->products[] = $item;
+        }
     }
 
 
-    public function addSalesTaxItem() {
-        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+    /**
+     * Update Sales Receipt REF Number.
+     *
+     * @param type $txn
+     * @param Order $order
+     *
+     * @return type
+     */
+    private function _createSalesReceiptUpdate($txn, Order $order)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txn.")");
 
+        $request = $this->_qb->request->AppendSalesReceiptModRq();
+        $request->TxnID->setValue($txn);
+        $request->RefNumber->setValue("N" . preg_replace("/^N/", "", $order->id));
+
+        return $this->_qb->sendRequest();
     }
 
 
-    public function processAddSalesTaxItem($response) {
+    /**
+     * Process Sales Receipt Update Response
+     *
+     * @param type $response
+     * @return mixed Sales Receipt RefID or False.
+     */
+    private function _processSalesReceiptUpdateResponse($response)
+    {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
+        if (!$response->ResponseList->Count) {
+            $this->log->write(Log::ERROR, "Failed to retrieve SalesReceipt Update Response.");
+            return false;
+        }
+        if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
+            $this->log->write(Log::NOTICE, "Error updating Sales Receipt");
+            $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            return false;
+        }
+
+        return $response->ResponseList->GetAt(0)->Detail->RefNumber->getValue;
     }
 }

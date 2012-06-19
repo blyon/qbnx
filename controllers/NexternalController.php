@@ -256,6 +256,30 @@ class NexternalController
 
 
     /**
+     * Create Order on Nexternal.
+     *
+     * @param Order $order
+     *
+     * @return mixed unique ID of new order or False on failure.
+     */
+    public function createOrder(Order $order)
+    {
+        // Get the arraykey of the last order.
+        $lastOrder = end(array_keys($orders));
+
+        // Add Order to Queue.
+        $this->_orderCreate($order);
+
+        // Send Order to Nexternal.
+        $response = $this->_processOrderCreateResponse($this->_nx->sendDom('customerupdate.rest'));
+        if (!empty($response['errors'])) {
+            return false;
+        }
+        return $response['orders'][0]->id;
+    }
+
+
+    /**
      * Send Authentication Request to Nexternal.
      *
      * @return SimpleXML object.
@@ -880,7 +904,6 @@ class NexternalController
             $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
             return $return;
         }
-
 
         // Process Orders.
         if (isset($dom->Order)) {
