@@ -80,7 +80,7 @@ class Util
             $filename = $baseFilename . '__' . $delta . CACHE_EXT;
         }
 
-        return $data;
+        return is_null($data) ? $data : unserialize($data);
     }
 
 
@@ -102,7 +102,7 @@ class Util
             $delta++;
         }
         if (($fh = fopen($filename, 'w'))) {
-            if (!fwrite($fh, $data)) {
+            if (!fwrite($fh, serialize($data))) {
                 throw new Exception("Failed to write to Cache File: " . $file);
             }
             fclose($fh);

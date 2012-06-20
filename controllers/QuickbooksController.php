@@ -32,6 +32,18 @@ class QuickbooksController
 
 
     /**
+     * Get Customer from Quickbooks
+     */
+    public function getCustomer($id)
+    {
+        $customer = $this->_processCustomerQueryResponse(
+            $this->_createCustomerQuery($id)
+        );
+        return $customer[0];
+    }
+
+
+    /**
      * Get Sales Receipt by Quickbooks Transaction ID.
      *
      * @param type $txn Quickbooks Transaction ID
@@ -99,13 +111,61 @@ class QuickbooksController
     }
 
 
+    private function _createCustomerQuery($listId)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$listId.")");
+
+        $query = $this->_qb->request->AppendCustomerQueryRq();
+        $query->ORCustomerListQuery->ListIDList($listId);
+        return $this->_qb->sendRequest();
+    }
+
+
+    private function _createCustomerQueryResponse($response)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        $customers = array();
+
+        if (!$response->ResponseList->Count) {
+            $this->log->write(Log::ERROR, "Failed to retrieve Customer List");
+            return $customers;
+        }
+        if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
+            $this->log->write(Log::NOTICE, "No Customers found");
+            $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            return $customers;
+        }
+
+        for ($i=0; $i<$response->ResponseList->Count; $i++) {
+            $details = &$response->ResponseList->GetAt($i)->Detail;
+            for ($n=0; $n<$details->Count; $n++) {
+                $d = $details->GetAt($n);
+                $c = new Customer;
+                $c->id          =
+                $c->type        = $this->_getValue($d->CustomerTypeRef,'FillName');
+                $c->email       = $this->_getValue($d,'Email');
+                $c->firstName   = $this->_getValue($d,'FirstName');
+                $c->lastName    = $this->_getValue($d,'LastName');
+
+                // write Customers to File if we've reached our cache cap.
+                if (MEMORY_CAP <= memory_get_usage()) {
+                    Util::writeCache(QUICKBOOKS_CUSTOMER_CACHE, $customers);
+                    $customers = array();
+                }
+            }
+        }
+
+        return $customers;
+    }
+
+
     /**
      * Query for a specific Sales Receipt.
      *
      * @param string $id Sales Receipt ID.
      * @return type
      */
-    public function _createSalesReceiptQuery($txnId=null, $refId=null, $dateRange=null)
+    private function _createSalesReceiptQuery($txnId=null, $refId=null, $dateRange=null)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".implode(":", $dateRange).")");
 
@@ -132,7 +192,7 @@ class QuickbooksController
      * @param type $response
      * @return array Array of Order Objects.
      */
-    public function _processSalesReceiptQueryResponse($response)
+    private function _processSalesReceiptQueryResponse($response)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $orders = array();
@@ -204,7 +264,7 @@ class QuickbooksController
 
                 // write Orders to File if we've reached our cache cap.
                 if (MEMORY_CAP <= memory_get_usage()) {
-                    Util::writeCache(QUICKBOOKS_ORDER_CACHE, serialize($orders));
+                    Util::writeCache(QUICKBOOKS_ORDER_CACHE, $orders);
                     $orders = array();
                 }
             }
@@ -222,7 +282,7 @@ class QuickbooksController
      *
      * @return type
      */
-    public function _createSalesReceiptFromOrder(Order $order, Customer $customer)
+    private function _createSalesReceiptFromOrder(Order $order, Customer $customer)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $request = $this->_qb->request->AppendSalesReceiptAddRq();

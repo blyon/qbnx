@@ -171,8 +171,10 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
             // Save orders to cache and process cache.
             Util::writeCache(QUICKBOOKS_ORDER_CACHE, serialize($qbOrders));
             $totalOrders = 0;
-            while (null !== ($qbOrders = Util::readCache(QUICKBOOKS_ORDER_CACHE))) {
-                $totalOrders += count($qxOrders);
+            while (null !== ($cacheOrders = Util::readCache(QUICKBOOKS_ORDER_CACHE))) {
+                $qbOrders = unserialize($cacheOrders);
+                unset($cacheOrders);
+                $totalOrders += count($qbOrders);
                 // Get Order Customers.
                 foreach ($qbOrders as $qbOrder) {
                     // @TODO: Get Customer.
@@ -187,6 +189,9 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
                 if (!array_key_exists($qbOrder->customer, $qbCustomers)) {
                     $nxCustomers[$nxOrder->customer] = $nexternal->getCustomer($nxOrder->customer);
                 }
+                print_r($nxCustomers[$nxOrder->customer]);
+                print_r($qbOrder);
+                exit();
             }
             print_r(end($nxOrders));
             print "Send orders to QB\n";
