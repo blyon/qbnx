@@ -238,5 +238,18 @@ class Util
     public static function downloadUpdate()
     {
         $file = "https://github.com/blyon/qbnx/zipball/master";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 0);
+        curl_setopt($ch, CURLOPT_URL, $file);
+
+        $response = curl_exec($ch);
+
+        curl_close($ch);
+
+        $fh = fopen("update.zip","w");
+        fwrite($fh, $response);
+        fclose($fh);
+        system("unzip update.zip");
     }
 }

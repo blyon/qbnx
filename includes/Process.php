@@ -135,15 +135,10 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
     // Connect to Quickbooks.
     $quickbooks = new QuickbooksController();
 
-    // Get New Orders.
-    $orders = $quickbooks->getSalesReceiptByDate($from, $to);
-    print_r($orders);
-    return;
-
     // Check for failed auth.
-    //if (!$nexternal || !$quickbooks) {
-        //return false;
-    //}
+    if (!$nexternal || !$quickbooks) {
+        return false;
+    }
 
     // Download Customers from Nexternal.
     /*if ($customers) {
@@ -166,4 +161,37 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
         printf("Total Customers Sent to QB: %d\n", $totalCustomers);
     }*/
 
+    if ($orders) {
+        $qbOrders    = $quickbooks->getSalesReceiptByDate($from, $to);
+        $totalOrders += count($nxOrders);
+        $nxCustomers = array();
+
+        // Check for Cache before sending orders to QB.
+        if (file_exists(CACHE_DIR . QUICKBOOKS_ORDER_CACHE . CACHE_EXT)) {
+            // Save orders to cache and process cache.
+            Util::writeCache(QUICKBOOKS_ORDER_CACHE, serialize($qbOrders));
+            $totalOrders = 0;
+            while (null !== ($qbOrders = Util::readCache(QUICKBOOKS_ORDER_CACHE))) {
+                $totalOrders += count($qxOrders);
+                // Get Order Customers.
+                foreach ($qbOrders as $qbOrder) {
+                    // @TODO: Get Customer.
+                }
+                print "Send orders to QB from Cache\n";
+                // @TODO: Send to QB.
+            }
+        } else {
+            // Get Order Customers.
+            foreach ($qbOrders as $qbOrder) {
+                // Get Customer.
+                if (!array_key_exists($qbOrder->customer, $qbCustomers)) {
+                    $nxCustomers[$nxOrder->customer] = $nexternal->getCustomer($nxOrder->customer);
+                }
+            }
+            print_r(end($nxOrders));
+            print "Send orders to QB\n";
+            // @TODO: Send to QB.
+        }
+        printf("Total Orders Sent to QB: %d\n", $totalOrders);
+    }
 }

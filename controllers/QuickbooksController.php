@@ -107,7 +107,7 @@ class QuickbooksController
      */
     public function _createSalesReceiptQuery($txnId=null, $refId=null, $dateRange=null)
     {
-        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".$dateRange.")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".implode(":", $dateRange).")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
         if ($txnId) {
@@ -148,13 +148,13 @@ class QuickbooksController
         }
 
         for ($i=0; $i<$response->ResponseList->Count; $i++) {
-            $details = $response->ResponseList->GetAt($i)->Detail;
+            $details = &$response->ResponseList->GetAt($i)->Detail;
             for ($n=0; $n<$details->Count; $n++) {
                 $d = $details->GetAt($n);
                 $o = new Order;
                 $o->qbTxn           = $this->_getValue($d,'TxnID');
                 $o->id              = $this->_getValue($d,'RefNumber');
-                $o->timestamp       = $this->_getValue($d,'TxnDate');
+                $o->timestamp       = variant_date_to_timestamp($this->_getValue($d,'TxnDate'));
                 //$o->type;
                 //$o->status;
                 $o->subTotal        = $this->_getValue($d,'Subtotal');
@@ -166,7 +166,9 @@ class QuickbooksController
                 $o->ip;
                 $o->paymentStatus;
                 $o->paymentMethod;
-                $o->customer;
+                if ('' != ($c = $this->_getValue($d,'CustomerRef'))) {
+                    $o->customer        = $this->_getValue($c,'ListID');
+                }
                 $o->billingAddress  = array(
                     'address'   => $this->_getValue($d->BillAddress,'Addr1'),
                     'address2'  => $this->_getValue($d->BillAddress,'Addr2'),
@@ -187,7 +189,7 @@ class QuickbooksController
                 $o->discounts       = array();
                 $o->giftCerts       = array();
                 for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
-                    $line = $d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
+                    $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
                     $item = array(
                         'type'      => $this->_getValue($line->ItemRef,'ListID'),
                         'name'      => $this->_getValue($line->ItemRef,'FullName'),
@@ -199,6 +201,12 @@ class QuickbooksController
                     $o->products[] = $item;
                 }
                 $orders[] = $o;
+
+                // write Orders to File if we've reached our cache cap.
+                if (MEMORY_CAP <= memory_get_usage()) {
+                    Util::writeCache(QUICKBOOKS_ORDER_CACHE, serialize($orders));
+                    $orders = array();
+                }
             }
         }
         return $orders;
@@ -301,7 +309,7 @@ class QuickbooksController
             return false;
         }
 
-        $d = $response->ResponseList->GetAt($i)->Detail;
+        $d = &$response->ResponseList->GetAt($i)->Detail;
         $o = new Order;
         $o->qbTxn           = $this->_getValue($d,'TxnID');
         $o->id              = $this->_getValue($d,'RefNumber');
@@ -338,7 +346,7 @@ class QuickbooksController
         $o->discounts       = array();
         $o->giftCerts       = array();
         for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
-            $line = $d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
+            $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
             $item = array(
                 'type'      => $this->_getValue($line->ItemRef,'ListID'),
                 'name'      => $this->_getValue($line->ItemRef,'FullName'),
@@ -399,9 +407,9 @@ class QuickbooksController
     /**
      *
      */
-    private function _getValue($object, $attribute)
+    private function _getValue(&$object, $attribute)
     {
-        if (property_exists($object, $attribute)) {
+        if (property_exists($object, $attribute) && is_object($object->$attribute)) {
             return $object->$attribute->getValue;
         }
         return '';
