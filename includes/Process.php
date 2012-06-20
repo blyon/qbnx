@@ -120,5 +120,50 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
  */
 function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
 {
+    $log            = Log::getInstance();
+    $totalCustomers = 0;
+    $totalOrders    = 0;
+
+    // Connect to Nexternal.
+    $nexternal = new NexternalController();
+
+    // Authenticate with Nexternal.
+    if (!$nexternal->authenticate()) {
+        throw new Exception("Nexternal Authentication Failed.");
+    }
+
+    // Connect to Quickbooks.
+    $quickbooks = new QuickbooksController();
+
+    // Get New Orders.
+    $orders = $quickbooks->getSalesReceiptByDate($from, $to);
+    print_r($orders);
+    return;
+
+    // Check for failed auth.
+    //if (!$nexternal || !$quickbooks) {
+        //return false;
+    //}
+
+    // Download Customers from Nexternal.
+    /*if ($customers) {
+        $nxCustomers    = $nexternal->getCustomers($from, $to);
+        $totalCustomers += count($nxCustomers);
+
+        // Check for Cache before sending customers to QB.
+        if (file_exists(CACHE_DIR . NEXTERNAL_CUSTOMER_CACHE . CACHE_EXT)) {
+            // Save orders to cache and process cache.
+            Util::writeCache(NEXTERNAL_CUSTOMER_CACHE, serialize($nxCustomers));
+            while (null !== ($nxCustomers = Util::readCache(NEXTERNAL_CUSTOMER_CACHE))) {
+                $totalCustomers += count($nxCustomers);
+                print "Send customers to QB from Cache\n";
+                // @TODO: Send to QB.
+            }
+        } else {
+            // @TODO: Send to QB.
+            print "Send customers to QB\n";
+        }
+        printf("Total Customers Sent to QB: %d\n", $totalCustomers);
+    }*/
 
 }

@@ -41,7 +41,7 @@ class QuickbooksController
     public function getSalesReceiptByTxn($txn)
     {
         return $this->_processSalesReceiptQueryResponse(
-            $this->_createSalesReceiptQuery($txn, null)
+            $this->_createSalesReceiptQuery($txn, null, null)
         );
     }
 
@@ -56,7 +56,23 @@ class QuickbooksController
     public function getSalesReceiptByOrderId($id)
     {
         return $this->_processSalesReceiptQueryResponse(
-            $this->_createSalesReceiptQuery(null, $id)
+            $this->_createSalesReceiptQuery(null, $id, null)
+        );
+    }
+
+
+    /**
+     * Get Sales Receipt by Date.
+     *
+     * @param integer $from Start Date
+     * @param integer $to   End Date
+     *
+     * @return array Array of Order Objects.
+     */
+    public function getSalesReceiptByDate($from, $to)
+    {
+        return $this->_processSalesReceiptQueryResponse(
+            $this->_createSalesReceiptQuery(null, null, array('from' => $from, 'to' => $to))
         );
     }
 
@@ -89,16 +105,18 @@ class QuickbooksController
      * @param string $id Sales Receipt ID.
      * @return type
      */
-    public function _createSalesReceiptQuery($txnId=null, $refId=null)
+    public function _createSalesReceiptQuery($txnId=null, $refId=null, $dateRange=null)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$id.")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
         if ($txnId) {
             $query->ORTxnQuery->TxnFilter->TxnIDList->setValue($txnId);
-        }
-        if ($refId) {
+        } elseif ($refId) {
             $query->ORTxnQuery->TxnFilter->RefNumberList->setValue($refId);
+        } elseif ($dateRange) {
+            $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->FromModifiedDate->setValue(date('c', $dateRange['from']));
+            $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->ToModifiedDate->setValue(date('c', $dateRange['to']));
         }
         // 0-Starts With, 1-Contains, 2-Ends With
         //$query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
