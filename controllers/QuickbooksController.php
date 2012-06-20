@@ -107,7 +107,7 @@ class QuickbooksController
      */
     public function _createSalesReceiptQuery($txnId=null, $refId=null, $dateRange=null)
     {
-        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$id.")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".$dateRange.")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
         if ($txnId) {
@@ -115,8 +115,8 @@ class QuickbooksController
         } elseif ($refId) {
             $query->ORTxnQuery->TxnFilter->RefNumberList->setValue($refId);
         } elseif ($dateRange) {
-            $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->FromModifiedDate->setValue(date('c', $dateRange['from']));
-            $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->ToModifiedDate->setValue(date('c', $dateRange['to']));
+            $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->ORTxnDateRangeFilter->TxnDateFilter->FromTxnDate->setValue(date('Y-m-d', $dateRange['from']));
+            $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->ORTxnDateRangeFilter->TxnDateFilter->ToTxnDate->setValue(date('Y-m-d', $dateRange['to']));
         }
         // 0-Starts With, 1-Contains, 2-Ends With
         //$query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
@@ -148,55 +148,58 @@ class QuickbooksController
         }
 
         for ($i=0; $i<$response->ResponseList->Count; $i++) {
-            $d = $response->ResponseList->GetAt($i)->Detail;
-            $o = new Order;
-            $o->qbTxn           = $d->TxnID->getValue;
-            $o->id              = $d->RefNumber->getValue;
-            $o->timestamp       = $d->TxnDate->getValue;
-            //$o->type;
-            //$o->status;
-            $o->subTotal        = $d->Subtotal->getValue;
-            $o->taxTotal        = $d->SalesTaxTotal->getValue;
-            //$o->shipTotal;
-            $o->total           = $d->TotalAmount->getValue;
-            $o->memo            = $d->Memo->getValue;
-            $o->location;
-            $o->ip;
-            $o->paymentStatus;
-            $o->paymentMethod;
-            $o->customer;
-            $o->billingAddress  = array(
-                'address'   => $d->BillAddress->Addr1->getValue,
-                'address2'  => $d->BillAddress->Addr2->getValue,
-                'city'      => $d->BillAddress->City->getValue,
-                'state'     => $d->BillAddress->State->getValue,
-                'zip'       => $d->BillAddress->PostalCode->getValue,
-                'country'   => $d->BillAddress->Country->getValue,
-            );
-            $o->shippingAddress = array(
-                'address'   => $d->ShipAddress->Addr1->getValue,
-                'address2'  => $d->ShipAddress->Addr2->getValue,
-                'city'      => $d->ShipAddress->City->getValue,
-                'state'     => $d->ShipAddress->State->getValue,
-                'zip'       => $d->ShipAddress->PostalCode->getValue,
-                'country'   => $d->ShipAddress->Country->getValue,
-            );
-            $o->products        = array();
-            $o->discounts       = array();
-            $o->giftCerts       = array();
-            for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
-                $line = $d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
-                $item = array(
-                    'type'      => $line->ItemRef->ListID->getValue,
-                    'name'      => $line->ItemRef->FullName->getValue,
-                    'qty'       => $line->ItemRef->Quantity->getValue,
-                    'price'     => $line->ItemRef->Amount->getValue,
-                    'tracking'  => $line->ItemRef->Other1,
+            $details = $response->ResponseList->GetAt($i)->Detail;
+            for ($n=0; $n<$details->Count; $n++) {
+                $d = $details->GetAt($n);
+                $o = new Order;
+                $o->qbTxn           = $this->_getValue($d,'TxnID');
+                $o->id              = $this->_getValue($d,'RefNumber');
+                $o->timestamp       = $this->_getValue($d,'TxnDate');
+                //$o->type;
+                //$o->status;
+                $o->subTotal        = $this->_getValue($d,'Subtotal');
+                $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
+                //$o->shipTotal;
+                $o->total           = $this->_getValue($d,'TotalAmount');
+                $o->memo            = $this->_getValue($d,'Memo');
+                $o->location;
+                $o->ip;
+                $o->paymentStatus;
+                $o->paymentMethod;
+                $o->customer;
+                $o->billingAddress  = array(
+                    'address'   => $this->_getValue($d->BillAddress,'Addr1'),
+                    'address2'  => $this->_getValue($d->BillAddress,'Addr2'),
+                    'city'      => $this->_getValue($d->BillAddress,'City'),
+                    'state'     => $this->_getValue($d->BillAddress,'State'),
+                    'zip'       => $this->_getValue($d->BillAddress,'PostalCode'),
+                    'country'   => $this->_getValue($d->BillAddress,'Country'),
                 );
-                // @TODO: Product, Discount, or Gift Cert?
-                $o->products[] = $item;
+                $o->shippingAddress = array(
+                    'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
+                    'address2'  => $this->_getValue($d->ShipAddress,'Addr2'),
+                    'city'      => $this->_getValue($d->ShipAddress,'City'),
+                    'state'     => $this->_getValue($d->ShipAddress,'State'),
+                    'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
+                    'country'   => $this->_getValue($d->ShipAddress,'Country'),
+                );
+                $o->products        = array();
+                $o->discounts       = array();
+                $o->giftCerts       = array();
+                for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
+                    $line = $d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
+                    $item = array(
+                        'type'      => $this->_getValue($line->ItemRef,'ListID'),
+                        'name'      => $this->_getValue($line->ItemRef,'FullName'),
+                        'qty'       => $this->_getValue($line->ItemRef,'Quantity'),
+                        'price'     => $this->_getValue($line->ItemRef,'Amount'),
+                        'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
+                    );
+                    // @TODO: Product, Discount, or Gift Cert?
+                    $o->products[] = $item;
+                }
+                $orders[] = $o;
             }
-
         }
         return $orders;
     }
@@ -300,36 +303,36 @@ class QuickbooksController
 
         $d = $response->ResponseList->GetAt($i)->Detail;
         $o = new Order;
-        $o->qbTxn           = $d->TxnID->getValue;
-        $o->id              = $d->RefNumber->getValue;
-        $o->timestamp       = $d->TxnDate->getValue;
+        $o->qbTxn           = $this->_getValue($d,'TxnID');
+        $o->id              = $this->_getValue($d,'RefNumber');
+        $o->timestamp       = $this->_getValue($d,'TxnDate');
         //$o->type;
         //$o->status;
-        $o->subTotal        = $d->Subtotal->getValue;
-        $o->taxTotal        = $d->SalesTaxTotal->getValue;
+        $o->subTotal        = $this->_getValue($d,'Subtotal');
+        $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
         //$o->shipTotal;
-        $o->total           = $d->TotalAmount->getValue;
-        $o->memo            = $d->Memo->getValue;
+        $o->total           = $this->_getValue($d,'TotalAmount');
+        $o->memo            = $this->_getValue($d,'Memo');
         $o->location;
         $o->ip;
         $o->paymentStatus;
         $o->paymentMethod;
         $o->customer;
         $o->billingAddress  = array(
-            'address'   => $d->BillAddress->Addr1->getValue,
-            'address2'  => $d->BillAddress->Addr2->getValue,
-            'city'      => $d->BillAddress->City->getValue,
-            'state'     => $d->BillAddress->State->getValue,
-            'zip'       => $d->BillAddress->PostalCode->getValue,
-            'country'   => $d->BillAddress->Country->getValue,
+            'address'   => $this->_getValue($d->BillAddress,'Addr1'),
+            'address2'  => $this->_getValue($d->BillAddress,'Addr2'),
+            'city'      => $this->_getValue($d->BillAddress,'City'),
+            'state'     => $this->_getValue($d->BillAddress,'State'),
+            'zip'       => $this->_getValue($d->BillAddress,'PostalCode'),
+            'country'   => $this->_getValue($d->BillAddress,'Country'),
         );
         $o->shippingAddress = array(
-            'address'   => $d->ShipAddress->Addr1->getValue,
-            'address2'  => $d->ShipAddress->Addr2->getValue,
-            'city'      => $d->ShipAddress->City->getValue,
-            'state'     => $d->ShipAddress->State->getValue,
-            'zip'       => $d->ShipAddress->PostalCode->getValue,
-            'country'   => $d->ShipAddress->Country->getValue,
+            'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
+            'address2'  => $this->_getValue($d->ShipAddress,'Addr2'),
+            'city'      => $this->_getValue($d->ShipAddress,'City'),
+            'state'     => $this->_getValue($d->ShipAddress,'State'),
+            'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
+            'country'   => $this->_getValue($d->ShipAddress,'Country'),
         );
         $o->products        = array();
         $o->discounts       = array();
@@ -337,11 +340,11 @@ class QuickbooksController
         for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
             $line = $d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
             $item = array(
-                'type'      => $line->ItemRef->ListID->getValue,
-                'name'      => $line->ItemRef->FullName->getValue,
-                'qty'       => $line->ItemRef->Quantity->getValue,
-                'price'     => $line->ItemRef->Amount->getValue,
-                'tracking'  => $line->ItemRef->Other1,
+                'type'      => $this->_getValue($line->ItemRef,'ListID'),
+                'name'      => $this->_getValue($line->ItemRef,'FullName'),
+                'qty'       => $this->_getValue($line->ItemRef,'Quantity'),
+                'price'     => $this->_getValue($line->ItemRef,'Amount'),
+                'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
             );
             // @TODO: Product, Discount, or Gift Cert?
             $o->products[] = $item;
@@ -390,5 +393,17 @@ class QuickbooksController
         }
 
         return $response->ResponseList->GetAt(0)->Detail->RefNumber->getValue;
+    }
+
+
+    /**
+     *
+     */
+    private function _getValue($object, $attribute)
+    {
+        if (property_exists($object, $attribute)) {
+            return $object->$attribute->getValue;
+        }
+        return '';
     }
 }

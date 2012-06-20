@@ -233,4 +233,10 @@ class Util
             }
         }
     }
+
+
+    public static function downloadUpdate()
+    {
+        $file = "https://github.com/blyon/qbnx/zipball/master";
+    }
 }
