@@ -140,6 +140,34 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
         return false;
     }
 
+    $test = new Order;
+    $test->nexternalId  = "N9000001";
+    $test->subTotal     = 60.00;
+    $test->taxTotal     = 3.20;
+    $test->shipTotal    = 7.01;
+    $test->total        = 70.21;
+    $test->memo         = "Fake Sale";
+    $test->customer     = "2A50000-1205427202";
+    $test->billingAddress = array(
+        'address'   => '123 Any Street',
+        'address2'  => 'Suite C',
+        'city'      => 'Ramona',
+        'state'     => 'CA',
+        'zip'       => 92065,
+        'county'    => 'USA',
+    );
+    $test->shippingAddress  = array(
+        'address'   => '567 Sesame Street',
+        'city'      => 'Poway',
+        'state'     => 'CA',
+        'zip'       => 92064,
+        'county'    => 'USA',
+    );
+    $customer = $quickbooks->getCustomer($test->customer);
+    $quickbooks->addSalesReceipt($order, $customer);
+
+
+    return true;
     // Download Customers from Nexternal.
     /*if ($customers) {
         $nxCustomers    = $nexternal->getCustomers($from, $to);
@@ -163,8 +191,8 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
 
     if ($orders) {
         $qbOrders    = $quickbooks->getSalesReceiptByDate($from, $to);
-        $totalOrders += count($nxOrders);
-        $nxCustomers = array();
+        $totalOrders += count($qbOrders);
+        $qbCustomers = array();
 
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . QUICKBOOKS_ORDER_CACHE . CACHE_EXT)) {
@@ -177,23 +205,26 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
                 $totalOrders += count($qbOrders);
                 // Get Order Customers.
                 foreach ($qbOrders as $qbOrder) {
-                    // @TODO: Get Customer.
+                    // Get Customer.
+                    if (!array_key_exists($qbOrder->customer, $qbCustomers)) {
+                        $qbCustomers[$qbOrder->customer] = $quickbooks->getCustomer($qbOrder->customer);
+                    }
                 }
                 print "Send orders to QB from Cache\n";
                 // @TODO: Send to QB.
             }
         } else {
             // Get Order Customers.
-            foreach ($qbOrders as $qbOrder) {
-                // Get Customer.
-                if (!array_key_exists($qbOrder->customer, $qbCustomers)) {
-                    $nxCustomers[$nxOrder->customer] = $nexternal->getCustomer($nxOrder->customer);
+            foreach ($qbOrders as $key => $qbOrder) {
+                // Ignore if Order initiated from Quickbooks.
+                if (preg_match('/^N/', $qbOrder->id)) {
+                    unset($qbOrders[$key]);
+                    continue;
                 }
-                print_r($nxCustomers[$nxOrder->customer]);
                 print_r($qbOrder);
                 exit();
             }
-            print_r(end($nxOrders));
+            print_r(end($qbOrders));
             print "Send orders to QB\n";
             // @TODO: Send to QB.
         }

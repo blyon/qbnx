@@ -116,12 +116,14 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$listId.")");
 
         $query = $this->_qb->request->AppendCustomerQueryRq();
-        $query->ORCustomerListQuery->ListIDList($listId);
+        $query->ORCustomerListQuery->IncludeRetElementList->add('DataExtRet');
+        $query->ORCustomerListQuery->OwnerIDList->setValue(0);
+        $query->ORCustomerListQuery->ListIDList->setValue($listId);
         return $this->_qb->sendRequest();
     }
 
 
-    private function _createCustomerQueryResponse($response)
+    private function _processCustomerQueryResponse($response)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $customers = array();
@@ -141,11 +143,19 @@ class QuickbooksController
             for ($n=0; $n<$details->Count; $n++) {
                 $d = $details->GetAt($n);
                 $c = new Customer;
-                $c->id          =
+                $c->customer    = $this->_getValue($d,'CustomerName');
                 $c->type        = $this->_getValue($d->CustomerTypeRef,'FillName');
                 $c->email       = $this->_getValue($d,'Email');
                 $c->firstName   = $this->_getValue($d,'FirstName');
                 $c->lastName    = $this->_getValue($d,'LastName');
+                if ($d->DataExtRet) {
+                    for ($e=0; $e<$d->DataExtRet->Count; $e++) {
+                        if ("NexternalId" == $d->DataExtRet->GetAt($e)->DataExtName->getValue) {
+                            $c->nexternalId = $d->DataExtRet->GetAt($e)->DataExtValue->getValue;
+                        }
+                    }
+                }
+                $customers[] = $c;
 
                 // write Customers to File if we've reached our cache cap.
                 if (MEMORY_CAP <= memory_get_usage()) {
@@ -226,8 +236,8 @@ class QuickbooksController
                 $o->ip;
                 $o->paymentStatus;
                 $o->paymentMethod;
-                if ('' != ($c = $this->_getValue($d,'CustomerRef'))) {
-                    $o->customer        = $this->_getValue($c,'ListID');
+                if (isset($d->CustomerRef)) {
+                    $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
                 }
                 $o->billingAddress  = array(
                     'address'   => $this->_getValue($d->BillAddress,'Addr1'),
@@ -248,17 +258,26 @@ class QuickbooksController
                 $o->products        = array();
                 $o->discounts       = array();
                 $o->giftCerts       = array();
-                for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
-                    $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
-                    $item = array(
-                        'type'      => $this->_getValue($line->ItemRef,'ListID'),
-                        'name'      => $this->_getValue($line->ItemRef,'FullName'),
-                        'qty'       => $this->_getValue($line->ItemRef,'Quantity'),
-                        'price'     => $this->_getValue($line->ItemRef,'Amount'),
-                        'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
-                    );
-                    // @TODO: Product, Discount, or Gift Cert?
-                    $o->products[] = $item;
+                if ($d->ORSalesReceiptLineRetList) {
+                    for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
+                        $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
+                        $item = array(
+                            'type'      => $this->_getValue($line->ItemRef,'ListID'),
+                            'name'      => $this->_getValue($line->ItemRef,'FullName'),
+                            'qty'       => $this->_getValue($line->ItemRef,'Quantity'),
+                            'price'     => $this->_getValue($line->ItemRef,'Amount'),
+                            'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
+                        );
+                        // @TODO: Product, Discount, or Gift Cert?
+                        $o->products[] = $item;
+                    }
+                }
+                if ($d->DataExtRet) {
+                    for ($e=0; $e<$d->DataExtRet->Count; $e++) {
+                        if ("NexternalId" == $d->DataExtRet->GetAt($e)->DataExtName->getValue) {
+                            $o->nexternalId = $d->DataExtRet->GetAt($e)->DataExtValue->getValue;
+                        }
+                    }
                 }
                 $orders[] = $o;
 
@@ -417,6 +436,15 @@ class QuickbooksController
             // @TODO: Product, Discount, or Gift Cert?
             $o->products[] = $item;
         }
+        if ($d->DataExtRet) {
+            for ($e=0; $e<$d->DataExtRet->Count; $e++) {
+                if ("NexternalId" == $d->DataExtRet->GetAt($e)->DataExtName->getValue) {
+                    $o->nexternalId = $d->DataExtRet->GetAt($e)->DataExtValue->getValue;
+                }
+            }
+        }
+
+        return $o;
     }
 
 
@@ -433,8 +461,16 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txn.")");
 
         $request = $this->_qb->request->AppendSalesReceiptModRq();
+
+        $request->IncludeRetElementList->add('DataExtRet');
+        $request->OwnerIDList->setValue(0);
+
         $request->TxnID->setValue($txn);
         $request->RefNumber->setValue("N" . preg_replace("/^N/", "", $order->id));
+
+        $nexternalId = $request->DataExtRet->Append();
+        $nexternalId->DataExtName->setValue("NexternalId");
+        $nexternalId->DataExtValue->setValue("N" . preg_replace("/^N/", "", $order->id));
 
         return $this->_qb->sendRequest();
     }

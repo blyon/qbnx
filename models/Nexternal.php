@@ -88,11 +88,21 @@ class Nexternal
      */
     private function __construct()
     {
+        Util::deleteCache(NEXTERNAL_ORDER_CACHE);
+        Util::deleteCache(NEXTERNAL_CUSTOMER_CACHE);
+
         $this->_docroot         = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
         $config                 = Util::config();
         $this->_config          = $config['Nexternal'];
         $this->log              = Log::getInstance();
         $this->log->directory   = $config['Log']['directory'];
+    }
+
+
+    public function __destruct()
+    {
+        Util::deleteCache(NEXTERNAL_ORDER_CACHE);
+        Util::deleteCache(NEXTERNAL_CUSTOMER_CACHE);
     }
 
 

@@ -2,7 +2,9 @@
 
 class Customer
 {
-    public $id;
+    public $quickbooksId;
+    public $nexternalId;
+    public $company;
     public $type;
     public $email;
     public $firstName;

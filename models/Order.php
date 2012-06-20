@@ -3,6 +3,7 @@
 class Order
 {
     public $id;
+    public $nexternalId;
     public $timestamp;
     public $type;
     public $status;

@@ -41,6 +41,9 @@ class Quickbooks
      */
     private function __construct()
     {
+        Util::deleteCache(QUICKBOOKS_ORDER_CACHE);
+        Util::deleteCache(QUICKBOOKS_CUSTOMER_CACHE);
+
         $this->_docroot         = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
         $config                 = Util::config();
         $this->_appName         = $config['Quickbooks']['app'];
@@ -57,6 +60,8 @@ class Quickbooks
      */
     public function __destruct()
     {
+        Util::deleteCache(QUICKBOOKS_ORDER_CACHE);
+        Util::deleteCache(QUICKBOOKS_CUSTOMER_CACHE);
         //$this->_sm->EndSession($this->_ticket);
         $this->_sm->CloseConnection();
     }
