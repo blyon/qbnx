@@ -116,9 +116,9 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$listId.")");
 
         $query = $this->_qb->request->AppendCustomerQueryRq();
-        $query->ORCustomerListQuery->IncludeRetElementList->add('DataExtRet');
-        $query->ORCustomerListQuery->OwnerIDList->setValue(0);
-        $query->ORCustomerListQuery->ListIDList->setValue($listId);
+        $query->IncludeRetElementList->add('DataExtRet');
+        $query->OwnerIDList->add(0);
+        $query->ORCustomerListQuery->ListIDList->add($listId);
         return $this->_qb->sendRequest();
     }
 
@@ -143,15 +143,15 @@ class QuickbooksController
             for ($n=0; $n<$details->Count; $n++) {
                 $d = $details->GetAt($n);
                 $c = new Customer;
-                $c->customer    = $this->_getValue($d,'CustomerName');
+                $c->company     = $this->_getValue($d,'CompanyName');
                 $c->type        = $this->_getValue($d->CustomerTypeRef,'FillName');
                 $c->email       = $this->_getValue($d,'Email');
                 $c->firstName   = $this->_getValue($d,'FirstName');
                 $c->lastName    = $this->_getValue($d,'LastName');
-                if ($d->DataExtRet) {
-                    for ($e=0; $e<$d->DataExtRet->Count; $e++) {
-                        if ("NexternalId" == $d->DataExtRet->GetAt($e)->DataExtName->getValue) {
-                            $c->nexternalId = $d->DataExtRet->GetAt($e)->DataExtValue->getValue;
+                if ($d->DataExtRetList) {
+                    for ($e=0; $e<$d->DataExtRetList->Count; $e++) {
+                        if ("NexternalId" == $d->DataExtRetList->GetAt($e)->DataExtName->getValue) {
+                            $c->nexternalId = $d->DataExtRetList->GetAt($e)->DataExtValue->getValue;
                         }
                     }
                 }
