@@ -77,8 +77,12 @@ class NexternalController
         $response = $this->_processCustomerQueryResponse(
             $this->_customerQueryById($customer_id)
         );
-
-        return $response['customers'][0];
+        if(isset($response['customers'][0])) {
+            return $response['customers'][0];
+        }
+        else {
+            return FALSE;
+        }
     }
 
 
@@ -171,6 +175,44 @@ class NexternalController
     }
 
 
+   /**
+     * Download Orders from Nexternal by a order ID
+     *
+     * @param integer $id OrderID
+     *
+     * @return array of Orders.
+     */
+    public function getOrderbyID($id)
+    {
+        $orders    = array();
+        $response = $this->_processOrderQueryResponse(
+            $this->_orderQuerybyID(
+                $id
+            )
+        );
+      
+
+        // Add Order(s) to Array.
+        foreach ($response['orders'] as $order) {
+            $orders[] = $order;
+        }
+
+        // set additional pages flag.
+        $morePages = $response['morePages'];
+
+        // reset response.
+        unset($response);
+
+        // write Orders to File if we've reached our cache cap.
+        if (MEMORY_CAP <= memory_get_usage()) {
+            Util::writeCache(NEXTERNAL_ORDER_CACHE, $orders);
+            $orders = array();
+        }
+
+        return $orders;
+    }
+
+
     /**
      * Create Customers on Nexternal.
      *
@@ -179,7 +221,7 @@ class NexternalController
      *
      * @param boolean
      */
-    public function createCustomers($customers)
+    public function createCustomers($customers, Order $order)
     {
         // Get the arraykey of the last customer.
         $lastCustomer = end(array_keys($customers));
@@ -191,11 +233,12 @@ class NexternalController
                 $this->log->write(Log::CRIT, "One or more customers passed to ".__FUNCTION__." is not an instance of Customer");
             }
             // Add Customer to Queue.
-            $this->_customerCreate($customer);
+            $this->_customerCreate($customer,$order);
 
             // Send XML to Nexternal if we have 15 customers in the queue, or if
             // this is the last customer in the array.
-            $customersInQueue = count($this->nx->dom->children('Customer'));
+            $customersInQueue = count($this->_nx->dom->children('Customer'));
+ 
             if (Nexternal::CUSTUPDATE_MAX == $customersInQueue
                 || $cid == $lastCustomer
             ) {
@@ -203,8 +246,15 @@ class NexternalController
                 if (!empty($response['errors'])) {
                     return false;
                 }
-                if (count($response['customers']) != $customersInQueue) {
-                    $this->log->write(Log::ERROR, sptrinf("The number of customers returned from CustomerCreate[%d] does not match the number of Customers Sent[%d]", count($response['customers'], $customersInQueue)));
+                else{
+                    print_r($response['customers'][0]);
+                    $c = new Customer;
+                    $c->id          = (string) $response['customers'][0]->id;
+                    $c->email       = (string) $response['customers'][0]->email;
+                    $c->type        = (string) $response['customers'][0]->type;
+                    $c->firstName   = (string) $response['customers'][0]->FirstName;
+                    $c->lastName    = (string) $response['customers'][0]->LastName;
+                    return $c;
                 }
             }
         }
@@ -221,7 +271,7 @@ class NexternalController
      *
      * @param boolean
      */
-    public function createOrders($orders)
+    public function createOrders($orders,$customers)
     {
         // Get the arraykey of the last order.
         $lastOrder = end(array_keys($orders));
@@ -233,7 +283,7 @@ class NexternalController
                 $this->log->write(Log::CRIT, "One or more orders passed to ".__FUNCTION__." is not an instance of Order");
             }
             // Add Order to Queue.
-            $this->_orderCreate($order);
+            $this->_orderCreate($order,$customers[$order->customer]);
 
             // Send XML to Nexternal if we have 15 orders in the queue, or if
             // this is the last order in the array.
@@ -262,13 +312,10 @@ class NexternalController
      *
      * @return mixed unique ID of new order or False on failure.
      */
-    public function createOrder(Order $order)
+    public function createOrder(Order $order, Customer $customer)
     {
-        // Get the arraykey of the last order.
-        $lastOrder = end(array_keys($orders));
-
         // Add Order to Queue.
-        $this->_orderCreate($order);
+        $this->_orderCreate($order,$customer);
 
         // Send Order to Nexternal.
         $response = $this->_processOrderCreateResponse($this->_nx->sendDom('customerupdate.rest'));
@@ -319,7 +366,7 @@ class NexternalController
         // Check for Errors.
         if (count($responseDom->children('Errors'))) {
             $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $responseDom->Errors->ErrorDescription));
+            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $responseDom->Errors->ErrorDescription));
             return false;
         }
 
@@ -384,7 +431,7 @@ class NexternalController
         // Check for Errors.
         if (count($responseDom->children('Errors'))) {
             $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $responseDom->Errors->ErrorDescription));
+            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $responseDom->Errors->ErrorDescription));
             return false;
         }
 
@@ -452,6 +499,33 @@ class NexternalController
         return $responseDom;
     }
 
+    
+    /**
+     * Query Nexternal for Order by ID.
+     *
+     * @param integer $id
+     *
+     * @return SimpleXml response.
+     */
+    private function _orderQuerybyID($id)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+
+        // Initialize DOM {@see _addCredentials}.
+        $this->_nx->initDom('<OrderQueryRequest/>');
+
+        // Add OrderNO Range Filter.
+        $order_no = $this->_nx->dom->addChild('OrderNoRange');
+        $order_no->addChild('OrderNoStart', $id);
+        $order_no->addChild('OrderNoEnd', $id);
+
+        // Send XML to Nexternal.
+        $responseDom = $this->_nx->sendDom('orderquery.rest');
+
+        // Return Response Dom.
+        return $responseDom;
+    }
+
 
     /**
      * Process Order Query Response.
@@ -473,7 +547,7 @@ class NexternalController
         // Process Errors.
         if (count($dom->children('Errors'))) {
             $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
+            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
             $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
             return $return;
         }
@@ -660,7 +734,7 @@ class NexternalController
         // Process Errors.
         if (count($dom->children('Errors'))) {
             $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $this->_nx->dom->Errors->ErrorDescription));
+            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $this->_nx->dom->Errors->ErrorDescription));
             $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
             return $return;
         }
@@ -703,7 +777,7 @@ class NexternalController
         return $c;
     }
 
-
+    
     /**
      * Prepare Customer for creation on Nexternal.
      *
@@ -711,7 +785,7 @@ class NexternalController
      *
      * @return boolean TRUE if customer added to request queue.
      */
-    private function _customerCreate(Customer $customer)
+    private function _customerCreate(Customer $customer, Order $order, $mode = 'Add')
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
@@ -719,21 +793,41 @@ class NexternalController
             // Initialize DOM {@see _addCredentials}.
             $this->_nx->initDom('<CustomerUpdateRequest/>');
         }
-
-        // Make sure we won't go over the maximum number of customers per request.
-        if (1 + count($this->_nx->dom->children('Customer') > Nexternal::CUSTUPDATE_MAX)) {
-            $this->log->write(Log::ERROR, sptrinf("Maximum number of Customers [%d] already added to CustomerUpdateRequest", Nexternal::CUSTUPDATE_MAX));
-            return false;
+        if(count($this->_nx->dom->children('Customer') != 0)) {
+            $order_count = 1 + (int)count($this->_nx->dom->children('Customer'));
+            // Make sure we won't go over the maximum number of customers per request.
+            if ($order_count > (int)Nexternal::CUSTUPDATE_MAX) {
+                $this->log->write(Log::ERROR, sprintf("Maximum number of Customers [%d] already added to CustomerUpdateRequest", Nexternal::CUSTUPDATE_MAX));
+                return false;
+            }
         }
 
         // Add Customer to DOM.
-        $nxCust = $this->_nx->dom->addChild('Customer')->addAttribute('Mode', 'Add')->addAttribute('MatchingField', 'Email');
+        $nxCust =  $this->_nx->dom->addChild('Customer');
+        $nxCust->addAttribute('Mode', $mode);
+        $nxCust->addAttribute('MatchingField', 'Email');
         $nxCust->addChild('Name');
         $nxCust->Name->addChild('FirstName', $customer->firstName);
         $nxCust->Name->addChild('LastName', $customer->lastName);
         $nxCust->addChild('Email', $customer->email);
-        $nxCust->addChild('CustomerType', $customer->type);
-
+        $nxCust->addChild('CustomerType', 'Consumer');
+        $nxCust->addChild('Address');
+        $nxCust->Address->addAttribute('Type', 'Residential');
+        $nxCust->Address->addChild('Name');
+        $nxCust->Address->Name->addChild('FirstName', $customer->firstName);
+        $nxCust->Address->Name->addChild('LastName', $customer->lastName);
+        $nxCust->Address->addChild('StreetAddress1', $order->billingAddress['address']);
+	if(!empty($order->billingAddress['address2'])) {
+		$nxCust->Address->addChild('StreetAddress2', $order->billingAddress['address2']);
+	}
+        $nxCust->Address->addChild('City', $order->billingAddress['city']);
+        $nxCust->Address->addChild('StateProvCode', $order->billingAddress['state']);
+        $nxCust->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
+	if($order->billingAddress['country'] == 'USA') {
+		$order->billingAddress['country'] = 'US';
+	}
+        $nxCust->Address->addChild('CountryCode', $order->billingAddress['country']);
+        $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
         return true;
     }
 
@@ -757,7 +851,7 @@ class NexternalController
         // Process Errors.
         if (count($dom->children('Errors'))) {
             $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
+            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
             $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
             return $return;
         }
@@ -791,32 +885,33 @@ class NexternalController
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$order->id.")");
 
-        // Make sure we won't go over the maximum number of customers per request.
-        if (1 + count($this->_nx->dom->children('Customer') > Nexternal::CUSTUPDATE_MAX)) {
-            $this->log->write(Log::ERROR, sptrinf("Maximum number of Customers [%d] already added to CustomerUpdateRequest", Nexternal::CUSTUPDATE_MAX));
-            return false;
-        }
-
         // Initialize DOM {@see _addCredentials}.
-        $this->_initDom('<OrderCreate/>');
-        // Let Nexternal know these orders are from an external system.
-        $this->dom->OrderCreate->addAttribute('Mode', 'Import');
+        $this->_nx->initDom('<OrderCreateRequest/>');
 
-        $t = $this->dom->OrderCreate->addChild('OrderDate')->addChild('DateTime');
+        $this->_nx->dom->addChild('OrderCreate');
+
+        // Let Nexternal know these orders are from an external system.
+        $this->_nx->dom->OrderCreate->addAttribute('Mode', 'Import');
+        $this->_nx->dom->OrderCreate->addChild('BillingStatus',$order->paymentStatus);
+
+        $t = $this->_nx->dom->OrderCreate->addChild('OrderDate')->addChild('DateTime');
         $t->addChild('Date', date('m/d/Y', $order->timestamp));
         $t->addChild('Time', date('h:i', $order->timestamp));
 
         // Add Customer.
-        $c = $this->dom->OrderCreate->addChild('Customer');
+        $c = $this->_nx->dom->OrderCreate->addChild('Customer');
         $c->addAttribute('MatchingField', 'CustomerNo');
         $c->addChild('CustomerNo', $customer->id);
 
         // Add Shipping Info.
-        $s = $this->dom->OrderCreate->addChild('ShipTos')->addChild('ShipTo');
-        $s->addChild('Address')->addChild('Name');
+        $s = $this->_nx->dom->OrderCreate->addChild('ShipTos')->addChild('ShipTo');
+        $s->addChild('Address');
+        $s->Address->addAttribute('Type', 'Residential');
+
+        $s->Address->addChild('Name');
         $s->Address->Name->addChild('FirstName', $order->billingAddress['firstName']);
         $s->Address->Name->addChild('LastName', $order->billingAddress['lastName']);
-        $s->Address->addChild('CompanyName', $order->billingAddress['company']);
+        //$s->Address->addChild('CompanyName', $order->billingAddress['company']);
         $s->Address->addChild('StreetAddress1', $order->billingAddress['address']);
         $s->Address->addChild('StreetAddress2', $order->billingAddress['address2']);
         $s->Address->addChild('City', $order->billingAddress['city']);
@@ -832,6 +927,7 @@ class NexternalController
             $p->addChild('ProductSKU', $product->sku);
             $p->addChild('Qty', $product->qty);
             $p->addChild('UnitPrice', $product->price);
+            $p->addChild('LineItemStatus', 'In Process');
         }
 
         // Add Discounts.
@@ -848,7 +944,7 @@ class NexternalController
 
         // Add Gift Certificates.
         if (isset($order->giftCerts) && !empty($order->giftCerts)) {
-            $this->dom->OrderCreate->addChild('GiftCertificates');
+            $this->_nx->dom->OrderCreate->addChild('GiftCertificates');
             foreach ($order->giftCerts as $cert) {
                 $gc = $this->dom->OrderCreate->GiftCertificates->addChild('GiftCert');
                 $gc->addChild('GiftCertAmount', $cert->amount);
@@ -860,11 +956,19 @@ class NexternalController
         }
 
         // Add Billing Info.
-        $a = $this->dom->OrderCreate->addChild('BillTo')->addChild('Address');
+        $a = $this->_nx->dom->OrderCreate->addChild('BillTo');
+
+        $a= $a->addChild('Address');
+        $a->addAttribute('Type', 'Residential');
+
         $a->addChild('Name');
         $a->Name->addChild('FirstName', $order->billingAddress['firstName']);
         $a->Name->addChild('LastName', $order->billingAddress['lastName']);
-        $a->addChild('CompanyName', $order->billingAddress['company']);
+
+        if(isset($order->billingAddress['company']) && !empty($order->billingAddress['company'])) {
+            $a->addChild('CompanyName', $order->billingAddress['company']);
+        }
+
         $a->addChild('StreetAddress1', $order->billingAddress['address']);
         $a->addChild('StreetAddress2', $order->billingAddress['address2']);
         $a->addChild('City', $order->billingAddress['city']);
@@ -873,8 +977,11 @@ class NexternalController
         $a->addChild('CountryCode', $order->billingAddress['country']);
         $a->addChild('PhoneNumber', $order->billingAddress['phone']);
 
+        $v = $this->_nx->dom->OrderCreate->addChild('Payment');
+        $v->addChild('PaymentMethod',  $order->paymentMethod['type']);
+
         // Send XML to Nexternal.
-        $responseDom = $this->_sendDom('ordercreate.rest');
+        $responseDom = $this->_nx->sendDom('ordercreate.rest');
 
         // Return Response Dom.
         return $responseDom;
@@ -900,7 +1007,7 @@ class NexternalController
         // Process Errors.
         if (count($dom->children('Errors'))) {
             $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sptrintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
+            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
             $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
             return $return;
         }

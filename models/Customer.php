@@ -9,5 +9,6 @@ class Customer
     public $email;
     public $firstName;
     public $lastName;
+    public $fullName;
     public $address = array();
 }

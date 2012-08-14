@@ -39,7 +39,8 @@ $args = array(
 // Parse user entered Arguments.
 Util::parseArgs($args);
 
-
+testCreateCustomers();
+exit;
 // Check for required args, help, and valid time.
 if ($args['h']
     || (!$args['q'] && !$args['n'])
@@ -48,7 +49,6 @@ if ($args['h']
     Util::showHelp();
     exit();
 }
-
 
 // Check for Quickbooks Argument.
 if ($args['q']) {

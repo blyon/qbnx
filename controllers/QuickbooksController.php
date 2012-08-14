@@ -42,7 +42,46 @@ class QuickbooksController
         return $customer[0];
     }
 
+    
+     /**
+     * Get create custom field for customer
+     */
+    public function createCustomCustomerField($customer, $dataExtName, $dataExtValue, $table_name)
+    {
+        $this->_createCustomFeild($customer, $dataExtName, $dataExtValue, $table_name);
+    }
 
+
+    /**
+     * Get Customer from Quickbooks by full name
+     */
+    public function getCustomerbyName($name)
+    {
+        $customer = $this->_processCustomerQueryResponse(
+            $this->_createCustomerQueryFullName($name)
+        );
+        return $customer[0];
+    }
+
+    
+     /**
+     * Get Customer from Quickbooks by full name and Email
+     */
+    public function getCustomerbyNameandEmail($name,$email)
+    {
+        $customer = $this->_processCustomerQueryResponse(
+           $this->_createCustomerQueryFullName($name),
+           $email
+        );
+        if(isset($customer[0])) {
+            return $customer[0];
+        }
+        else {
+            return FALSE;
+        }
+    }
+
+    
     /**
      * Get Sales Receipt by Quickbooks Transaction ID.
      *
@@ -54,6 +93,21 @@ class QuickbooksController
     {
         return $this->_processSalesReceiptQueryResponse(
             $this->_createSalesReceiptQuery($txn, null, null)
+        );
+    }
+
+
+    /**
+     * Create customer in QB 
+     *
+     * @param customer
+     *
+     * @return array Array of Order Objects.
+     */
+    public function createCustomer($customer, $order)
+    {
+        return $this->_processCustomerCreateResponse(
+            $this->_createCustomer($customer,$order)
         );
     }
 
@@ -116,14 +170,35 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$listId.")");
 
         $query = $this->_qb->request->AppendCustomerQueryRq();
-        $query->IncludeRetElementList->add('DataExtRet');
         $query->OwnerIDList->add(0);
         $query->ORCustomerListQuery->ListIDList->add($listId);
         return $this->_qb->sendRequest();
     }
 
 
-    private function _processCustomerQueryResponse($response)
+    private function _createCustomerQueryFullName($name)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$name.")");
+
+        $query = $this->_qb->request->AppendCustomerQueryRq();
+        $query->OwnerIDList->add(0);
+        $query->ORCustomerListQuery->FullNameList->add($name);
+        return $this->_qb->sendRequest();
+    }
+
+    
+    private function _createCustomerQueryFullNameandEmail($name)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$name.")");
+
+        $query = $this->_qb->request->AppendCustomerQueryRq();
+        $query->OwnerIDList->add(0);
+        $query->ORCustomerListQuery->FullNameList->add($name);
+        return $this->_qb->sendRequest();
+    }
+
+    
+    private function _processCustomerQueryResponse($response,$email = FALSE)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $customers = array();
@@ -140,23 +215,27 @@ class QuickbooksController
 
         for ($i=0; $i<$response->ResponseList->Count; $i++) {
             $details = &$response->ResponseList->GetAt($i)->Detail;
+
             for ($n=0; $n<$details->Count; $n++) {
                 $d = $details->GetAt($n);
-                $c = new Customer;
-                $c->company     = $this->_getValue($d,'CompanyName');
-                $c->type        = $this->_getValue($d->CustomerTypeRef,'FillName');
-                $c->email       = $this->_getValue($d,'Email');
-                $c->firstName   = $this->_getValue($d,'FirstName');
-                $c->lastName    = $this->_getValue($d,'LastName');
-                if ($d->DataExtRetList) {
-                    for ($e=0; $e<$d->DataExtRetList->Count; $e++) {
-                        if ("NexternalId" == $d->DataExtRetList->GetAt($e)->DataExtName->getValue) {
-                            $c->nexternalId = $d->DataExtRetList->GetAt($e)->DataExtValue->getValue;
+            if(!$email || ($this->_getValue($d,'Email') == $email)) {
+                    $c = new Customer;
+                    $c->company     = $this->_getValue($d,'CompanyName');
+                    $c->type        = $this->_getValue($d->CustomerTypeRef,'FillName');
+                    $c->email       = $this->_getValue($d,'Email');
+                    $c->quickbooksId   = $this->_getValue($d,'ListID');
+                    $c->firstName   = $this->_getValue($d,'FirstName');
+                    $c->lastName    = $this->_getValue($d,'LastName');
+                    $c->fullName    = $this->_getValue($d,'FullName');
+                   if ($d->DataExtRetList) {
+                        for ($e=0; $e<$d->DataExtRetList->Count; $e++) {
+                            if ("NexternalId" == $d->DataExtRetList->GetAt($e)->DataExtName->getValue) {
+                                $c->nexternalId = $d->DataExtRetList->GetAt($e)->DataExtValue->getValue;
+                            }
                         }
                     }
+                    $customers[] = $c;
                 }
-                $customers[] = $c;
-
                 // write Customers to File if we've reached our cache cap.
                 if (MEMORY_CAP <= memory_get_usage()) {
                     Util::writeCache(QUICKBOOKS_CUSTOMER_CACHE, $customers);
@@ -168,7 +247,38 @@ class QuickbooksController
         return $customers;
     }
 
+    
+    private function _processCustomerCreateResponse($response)
+    {
+        if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
+            $this->log->write(Log::NOTICE, "customer not created");
+            $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            return false;
+        }
+        
+        $d = $response->ResponseList->GetAt(0)->Detail;
+        //$d = $details->GetAt(0);
+                
+        $c = new Customer;
+        $c->company        = $this->_getValue($d,'CompanyName');
+        $c->type           = $this->_getValue($d->CustomerTypeRef,'FillName');
+        $c->email          = $this->_getValue($d,'Email');
+        $c->quickbooksId   = $this->_getValue($d,'ListID');
+        $c->firstName      = $this->_getValue($d,'FirstName');
+        $c->lastName       = $this->_getValue($d,'LastName');
+        $c->fullName       = $this->_getValue($d,'FullName');
+       if ($d->DataExtRetList) {
+            for ($e=0; $e<$d->DataExtRetList->Count; $e++) {
+                if ("NexternalId" == $d->DataExtRetList->GetAt($e)->DataExtName->getValue) {
+                    $c->nexternalId = $d->DataExtRetList->GetAt($e)->DataExtValue->getValue;
+                }
+            }
+        }
 
+        return $c;
+    
+    }
+    
     /**
      * Query for a specific Sales Receipt.
      *
@@ -180,18 +290,17 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".implode(":", $dateRange).")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
+
         if ($txnId) {
             $query->ORTxnQuery->TxnFilter->TxnIDList->setValue($txnId);
         } elseif ($refId) {
-            $query->ORTxnQuery->TxnFilter->RefNumberList->setValue($refId);
+            $query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
+            $query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->RefNumber->setValue($refId);
         } elseif ($dateRange) {
             $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->ORTxnDateRangeFilter->TxnDateFilter->FromTxnDate->setValue(date('Y-m-d', $dateRange['from']));
             $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->ORTxnDateRangeFilter->TxnDateFilter->ToTxnDate->setValue(date('Y-m-d', $dateRange['to']));
         }
-        // 0-Starts With, 1-Contains, 2-Ends With
-        //$query->ORTxnQuery->TxnFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
-        //$query->ORTxnQuery->TxnFilter->OrRefNumberFilter->RefNumberFilter->RefNumber->setValue($id);
-
+    
         return $this->_qb->sendRequest();
     }
 
@@ -204,6 +313,7 @@ class QuickbooksController
      */
     private function _processSalesReceiptQueryResponse($response)
     {
+  
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $orders = array();
 
@@ -246,6 +356,7 @@ class QuickbooksController
                     'state'     => $this->_getValue($d->BillAddress,'State'),
                     'zip'       => $this->_getValue($d->BillAddress,'PostalCode'),
                     'country'   => $this->_getValue($d->BillAddress,'Country'),
+		    'phone'     => $this->_getValue($d->BillAddress,'Note'),
                 );
                 $o->shippingAddress = array(
                     'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
@@ -254,6 +365,7 @@ class QuickbooksController
                     'state'     => $this->_getValue($d->ShipAddress,'State'),
                     'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
                     'country'   => $this->_getValue($d->ShipAddress,'Country'),
+		    'phone'     => $this->_getValue($d->ShipAddress,'Note'),
                 );
                 $o->products        = array();
                 $o->discounts       = array();
@@ -272,13 +384,9 @@ class QuickbooksController
                         $o->products[] = $item;
                     }
                 }
-                if ($d->DataExtRet) {
-                    for ($e=0; $e<$d->DataExtRet->Count; $e++) {
-                        if ("NexternalId" == $d->DataExtRet->GetAt($e)->DataExtName->getValue) {
-                            $o->nexternalId = $d->DataExtRet->GetAt($e)->DataExtValue->getValue;
-                        }
-                    }
-                }
+             
+	        $o->nexternalId = $this->_getValue($d,'Other');
+		
                 $orders[] = $o;
 
                 // write Orders to File if we've reached our cache cap.
@@ -291,7 +399,73 @@ class QuickbooksController
         return $orders;
     }
 
+    
+    /**
+     * Create a custom feild used to store nexternal ID's
+     */
+    private function _createCustomFeild(Customer $customer, $dataExtName, $dataExtValue, $table_name) {
 
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        $request = $this->_qb->request->AppendDataExtModRq();
+        $request->OwnerID->setValue('0');
+        $request->DataExtName->setValue($dataExtName);
+        $request->DataExtValue->setValue($dataExtValue);
+        $request->ORListTxn->ListDataExt->ListDataExtType->SetAsString($table_name);
+        $request->ORListTxn->ListDataExt->ListObjRef->FullName->setValue($customer->fullName);
+        $resp =  $this->_qb->sendRequest();
+
+    }
+
+
+    /**
+     * Create New Customer from Customer.
+     *
+     * @param Customer $customer
+     *
+     * @return type
+     */
+    private function _createCustomer(Customer $customer,$order) {
+
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        $request = $this->_qb->request->AppendCustomerAddRq();
+
+        $request->Name->setValue                        ($customer->firstName.' '.$customer->lastName);
+        $request->FirstName->setValue                   ($customer->firstName);
+        $request->LastName->setValue                    ($customer->lastName);
+        $request->Email->setValue                       ($customer->email);
+        if(!empty($customer->phone)) {
+            $request->Phone->setValue                       ($customer->phone);
+        }
+
+        $request->BillAddress->Addr1->setValue          ($order->billingAddress['address']);
+        $request->BillAddress->Addr2->setValue          ($order->billingAddress['address2']);
+        $request->BillAddress->City->setValue           ($order->billingAddress['city']);
+        $request->BillAddress->State->setValue          ($order->billingAddress['state']);
+        $request->BillAddress->PostalCode->setValue     ($order->billingAddress['zip']);
+        $request->BillAddress->Country->setValue        ($order->billingAddress['country']);
+        $request->BillAddress->Note->setValue           ($order->billingAddress['phone']);
+
+        $request->ShipAddress->Addr1->setValue          ($order->shippingAddress['address']);
+        $request->ShipAddress->Addr2->setValue          ($order->shippingAddress['address2']);
+        $request->ShipAddress->City->setValue           ($order->shippingAddress['city']);
+        $request->ShipAddress->State->setValue          ($order->shippingAddress['state']);
+        $request->ShipAddress->PostalCode->setValue     ($order->shippingAddress['zip']);
+        $request->ShipAddress->Country->setValue        ($order->shippingAddress['country']);
+        $request->ShipAddress->Note->setValue           ($order->shippingAddress['phone']);
+
+        // Credit Card.
+        if ($order->paymentMethod['type'] == "Credit Card") {
+             //cant set because CC is masked
+             //$request->CreditCardInfo->CreditCardNumber->SetAsString($order->paymentMethod['cardNumber']);
+             //$date_parts = explode("/",$order->paymentMethod['cardNumber']);
+             //$request->CreditCardInfo->ExpirationMonth->setValue($date_parts[0]);
+             //$request->CreditCardInfo->ExpirationYear->setValue($date_parts[1]);
+        }
+    
+        return $this->_qb->sendRequest();
+    }
+
+    
     /**
      * Create Sales Receipt from Order.
      * Sales Receipt appended to $this->_qb.
@@ -305,63 +479,95 @@ class QuickbooksController
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $request = $this->_qb->request->AppendSalesReceiptAddRq();
+        $order_date = date ('m/d/Y',$order->timestamp);
 
-        // General Sales Receipt Info.
-        $request->DepositToAccountRef->FullName->setValue( $customer->fullName());
+        $request->DepositToAccountRef->FullName->setValue('Undeposited Funds');
         $request->RefNumber->setValue(                    "N" . preg_replace("/^N/", "", $order->id));
-        $request->TxnDate->setValue(                      $order->date());
-        $request->CustomerRef->FullName->setValue(        $customer->fullName());
-        $request->Memo->setValue(                         $order->memo());
+        $request->TxnDate->setValue(                      $order_date);
+        $request->CustomerRef->FullName->setValue(        $customer->fullName);
+        if(isset($order->memo) && !empty($order->memo)) {
+            $request->Memo->setValue(                         $order->memo);
+        }
+
         // Payment Method.
-        $request->PaymentMethodRef->FullName->setValue(   $order->cardType());
+        if(!empty($order->paymentMethod['type'])) {
+            $request->PaymentMethodRef->FullName->setValue(   $order->paymentMethod['type']);
+        }
+
         // Sales Tax.
-        $request->ItemSalesTaxRef->FullName->setValue(    $order->taxName());
+        if(isset( $order->qbTxn) && !empty($order->qbTxn)) {
+            $request->ItemSalesTaxRef->FullName->setValue(    $order->qbTxn);
+        }
+
         // Billing Address.
-        $request->BillAddress->Addr1->setValue(           $order->billingAddress());
-        $request->BillAddress->Addr2->setValue(           $order->billingAddress2());
-        $request->BillAddress->City->setValue(            $order->billingCity());
-        $request->BillAddress->State->setValue(           $order->billingState());
-        $request->BillAddress->PostalCode ->setValue(     $order->billingZip());
-        $request->BillAddress->Country->setValue(         $order->billingCountry());
-        $request->BillAddress->Note->setValue(            $order->billingNote());
+        $request->BillAddress->Addr1->setValue(           $order->billingAddress['address']);
+        $request->BillAddress->Addr2->setValue(           $order->billingAddress['address2']);
+        $request->BillAddress->City->setValue(            $order->billingAddress['city']);
+        $request->BillAddress->State->setValue(           $order->billingAddress['state']);
+        $request->BillAddress->PostalCode ->setValue(     $order->billingAddress['zip']);
+        $request->BillAddress->Country->setValue(         $order->billingAddress['country']);
+        if(isset($order->billingAddress['phone'])) {
+            $request->BillAddress->Note->setValue(        $order->billingAddress['phone']);
+        }
+
         // Shipping Address.
-        $request->ShipAddress->Addr1->setValue(           $order->shippingAddress());
-        $request->ShipAddress->Addr2->setValue(           $order->shippingAddress2());
-        $request->ShipAddress->City->setValue(            $order->shippingCity());
-        $request->ShipAddress->State->setValue(           $order->shippingState());
-        $request->ShipAddress->PostalCode->setValue(      $order->shippingZip());
-        $request->ShipAddress->Country->setValue(         $order->shippingCountry());
-        $request->ShipAddress->Note->setValue(            $order->shippingNote());
+        $request->ShipAddress->Addr1->setValue(           $order->shippingAddress['address']);
+        $request->ShipAddress->Addr2->setValue(           $order->shippingAddress['address2']);
+        $request->ShipAddress->City->setValue(            $order->shippingAddress['city']);
+        $request->ShipAddress->State->setValue(           $order->shippingAddress['state']);
+        $request->ShipAddress->PostalCode->setValue(      $order->shippingAddress['zip']);
+        $request->ShipAddress->Country->setValue(         $order->shippingAddress['country']);
+        if(isset($order->shippingAddress['phone'])) {
+            $request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
+        }
+  
         // Products.
         foreach ($order->products as $product) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(           $product->name());
-            $lineItem->SalesReceiptLineAdd->Desc->setValue(                        $product->description());
-            $lineItem->SalesReceiptLineAdd->Amount->setValue(                      $product->total());
-            $lineItem->SalesReceiptLineAdd->Quantity->setValue(                    $product->quantity());
-            $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(                 $order->date());
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(           $product['sku']);
+            $lineItem->SalesReceiptLineAdd->Desc->setValue(                        $product['name']);
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(                      $product['price']);
+            $lineItem->SalesReceiptLineAdd->Quantity->setValue(                    $product['qty']);
+            $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(                 $order_date);
             $lineItem->SalesReceiptLineAdd->InventorySiteRef->FullName->setValue(  "Main");
         }
+
         // Gift Certificates.
         foreach ($order->giftCerts as $gc) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   $gc->name());
-            $lineItem->SalesReceiptLineAdd->Desc->setValue(                $gc->description());
-            $lineItem->SalesReceiptLineAdd->Amount->setValue(              $gc->amount());
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(    'Internet Sales');
+            $lineItem->SalesReceiptLineAdd->Desc->setValue(                 $gc['code']);
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(               $gc['amount']);
         }
+
         // Discounts.
         foreach ($order->discounts as $discount) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   $discount->name());
-            $lineItem->SalesReceiptLineAdd->Desc->setValue(                $discount->description());
-            $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount->total());
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(  'DISCOUNT');
+            $lineItem->SalesReceiptLineAdd->Desc->setValue(                $discount['type'].$discount['name']);
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount['value']);
         }
+
         // Shipping Cost.
         $lineItem = $request->ORSalesReceiptLineAddList->Append();
-        $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   "SHIPPING");
-        $lineItem->SalesReceiptLineAdd->Desc->setValue(                "Shipping & Handling");
-        $lineItem->SalesReceiptLineAdd->Amount->setValue(              $order->shipTotal());
-        $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(         $order->date());
+        $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(      "SHIPPING");
+        $lineItem->SalesReceiptLineAdd->Desc->setValue(                   "Shipping & Handling");
+        if(!empty($order->shipTotal)) {
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(             $order->shipTotal);
+        }
+        $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(            $order_date);
+
+        // Credit Card.
+        if ($order->paymentMethod['type'] == "Credit Card") {
+             $request->CreditCardInfo->Type->setValue($order->paymentMethod['cardType']);
+             $request->CreditCardInfo->CreditCardNumber->setValue($order->paymentMethod['cardNumber']);
+             $date_parts = explode("/",$order->paymentMethod['cardNumber']);
+             $request->CreditCardInfo->ExpDate->setValue($order->paymentMethod['cardNumber']);
+             $request->CreditCardInfo->ExpMonth->setValue($date_parts[0]);
+             $request->CreditCardInfo->ExpYear->setValue($date_parts[1]);
+        }
+    
+        $request->Other->setValue("N" . preg_replace("/^N/", "", $order->id));
 
         return $this->_qb->sendRequest();
     }
@@ -388,16 +594,13 @@ class QuickbooksController
             return false;
         }
 
-        $d = &$response->ResponseList->GetAt($i)->Detail;
+        $d = &$response->ResponseList->GetAt(0)->Detail;
         $o = new Order;
         $o->qbTxn           = $this->_getValue($d,'TxnID');
         $o->id              = $this->_getValue($d,'RefNumber');
         $o->timestamp       = $this->_getValue($d,'TxnDate');
-        //$o->type;
-        //$o->status;
         $o->subTotal        = $this->_getValue($d,'Subtotal');
         $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
-        //$o->shipTotal;
         $o->total           = $this->_getValue($d,'TotalAmount');
         $o->memo            = $this->_getValue($d,'Memo');
         $o->location;
@@ -424,6 +627,8 @@ class QuickbooksController
         $o->products        = array();
         $o->discounts       = array();
         $o->giftCerts       = array();
+        $o->nexternalId = $this->_getValue($d,'Other');
+
         for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
             $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
             $item = array(
@@ -435,13 +640,6 @@ class QuickbooksController
             );
             // @TODO: Product, Discount, or Gift Cert?
             $o->products[] = $item;
-        }
-        if ($d->DataExtRet) {
-            for ($e=0; $e<$d->DataExtRet->Count; $e++) {
-                if ("NexternalId" == $d->DataExtRet->GetAt($e)->DataExtName->getValue) {
-                    $o->nexternalId = $d->DataExtRet->GetAt($e)->DataExtValue->getValue;
-                }
-            }
         }
 
         return $o;
@@ -510,4 +708,5 @@ class QuickbooksController
         }
         return '';
     }
+
 }
