@@ -26,7 +26,7 @@ require_once dirname(__FILE__) . '/constants.php';
 require_once dirname(__FILE__) . '/includes/Util.php';
 require_once dirname(__FILE__) . '/includes/Process.php';
 
-
+ 
 // Script Arguments.
 $args = array(
     'h' => false,   // Show Help.
@@ -39,8 +39,6 @@ $args = array(
 // Parse user entered Arguments.
 Util::parseArgs($args);
 
-testCreateCustomers();
-exit;
 // Check for required args, help, and valid time.
 if ($args['h']
     || (!$args['q'] && !$args['n'])

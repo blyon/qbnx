@@ -556,16 +556,6 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->Amount->setValue(             $order->shipTotal);
         }
         $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(            $order_date);
-
-        // Credit Card.
-        if ($order->paymentMethod['type'] == "Credit Card") {
-             $request->CreditCardInfo->Type->setValue($order->paymentMethod['cardType']);
-             $request->CreditCardInfo->CreditCardNumber->setValue($order->paymentMethod['cardNumber']);
-             $date_parts = explode("/",$order->paymentMethod['cardNumber']);
-             $request->CreditCardInfo->ExpDate->setValue($order->paymentMethod['cardNumber']);
-             $request->CreditCardInfo->ExpMonth->setValue($date_parts[0]);
-             $request->CreditCardInfo->ExpYear->setValue($date_parts[1]);
-        }
     
         $request->Other->setValue("N" . preg_replace("/^N/", "", $order->id));
 

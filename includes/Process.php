@@ -109,10 +109,10 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
                     }
                 }
                 print "Send orders to QB from Cache\n";
-            /*
                 foreach ($nxOrders as $nxOrder) {
                     $nx_customer = $nxCustomers[$nxOrder->customer];
-                    if(empty($quickbooks->getSalesReceiptByOrderId($nxOrder->id))) {
+					$order_check = $quickbooks->getSalesReceiptByOrderId($nxOrder->id);
+                    if(empty($order_check)) {
                     
                         // If the type is consumer use customer F
                         // If not search first by quickbooks id if set, if not then search by email and name
@@ -125,7 +125,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
                         elseif(!empty($nx_customer->quickbooksId)) {
                             $customer = $quickbooks->getCustomer($nx_customer->quickbooksId);
                         }
-                        elseif {
+                        else {
                             $fullname = $nx_customer ->firstName.' '.$nx_customer->lastName;
                             $customer = $quickbooks->getCustomerbyNameandEmail($fullname,$nx_customer->email);
                         }
@@ -145,7 +145,6 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
                         unset($nxOrder);
                     }
                 }
-            */
             }
         } else {
             // Get Order Customers.
@@ -156,43 +155,42 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
                 }
             }
             print "Send orders to QB\n";
-            /*
-                foreach ($nxOrders as $nxOrder) {
-                    $nx_customer = $nxCustomers[$nxOrder->customer];
-                    if(empty($quickbooks->getSalesReceiptByOrderId($nxOrder->id))) {
-                    
-                        // If the type is consumer use customer F
-                        // If not search first by quickbooks id if set, if not then search by email and name
-                        // If a customer is still not found then create it, if there was a error then dont send order
-                        // If a customer was found then lets send the order over
-                        
-                        if($nx_customer->type == 'Consumer') {
-                            $customer = $quickbooks->getCustomerbyName('f');
-                        }
-                        elseif(!empty($nx_customer->quickbooksId)) {
-                            $customer = $quickbooks->getCustomer($nx_customer->quickbooksId);
-                        }
-                        elseif {
-                            $fullname = $nx_customer ->firstName.' '.$nx_customer->lastName;
-                            $customer = $quickbooks->getCustomerbyNameandEmail($fullname,$nx_customer->email);
-                        }
-                        if($customer == FALSE) {
-                            $customer = $quickbooks->createCustomer($nx_customer,$nxOrder);
-                        }
-                        if($customer != FALSE) {
-                            $quickbooks->addSalesReceipt($nxOrder, $customer);
-                        }
-                        else {
-                            printf("Could not create customer for Order %d\n", $nxOrder->id);
-                            unset($nxOrder);
-                        }
-                    }
-                    else {
-                        printf("Order %d Exists in QB\n", $nxOrder->id);
-                        unset($nxOrder);
-                    }
-                }
-            */
+			foreach ($nxOrders as $nxOrder) {
+				$nx_customer = $nxCustomers[$nxOrder->customer];
+				$order_check = $quickbooks->getSalesReceiptByOrderId($nxOrder->id);
+				if(empty($order_check)) {
+				
+					// If the type is consumer use customer F
+					// If not search first by quickbooks id if set, if not then search by email and name
+					// If a customer is still not found then create it, if there was a error then dont send order
+					// If a customer was found then lets send the order over
+					
+					if($nx_customer->type == 'Consumer') {
+						$customer = $quickbooks->getCustomerbyName('f');
+					}
+					elseif(!empty($nx_customer->quickbooksId)) {
+						$customer = $quickbooks->getCustomer($nx_customer->quickbooksId);
+					}
+					else {
+						$fullname = $nx_customer ->firstName.' '.$nx_customer->lastName;
+						$customer = $quickbooks->getCustomerbyNameandEmail($fullname,$nx_customer->email);
+					}
+					if($customer == FALSE) {
+						$customer = $quickbooks->createCustomer($nx_customer,$nxOrder);
+					}
+					if($customer != FALSE) {
+						$quickbooks->addSalesReceipt($nxOrder, $customer);
+					}
+					else {
+						printf("Could not create customer for Order %d\n", $nxOrder->id);
+						unset($nxOrder);
+					}
+				}
+				else {
+					printf("Order %d Exists in QB\n", $nxOrder->id);
+					unset($nxOrder);
+				}
+			}
         }
 
         printf("Total Orders Sent to QB: %d\n", $totalOrders);
