@@ -431,6 +431,7 @@ class QuickbooksController
 
         $request->Name->setValue                        ($customer->firstName.' '.$customer->lastName);
         $request->FirstName->setValue                   ($customer->firstName);
+        $request->CustomerTypeRef->FullName->setValue   ("Wholesale");
         $request->LastName->setValue                    ($customer->lastName);
         $request->Email->setValue                       ($customer->email);
         if(!empty($customer->phone)) {
