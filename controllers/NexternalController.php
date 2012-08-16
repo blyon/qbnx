@@ -591,18 +591,21 @@ class NexternalController
                     'country'  => (string) $order->BillTo->Address->CountryCode,
                     'phone'    => (string) $order->BillTo->Address->PhoneNumber,
                 );
-                $o->shippingAddress  = array(
-                    'firstName'=> (string) $order->ShipTo->Address->Name->FirstName,
-                    'lastName' => (string) $order->ShipTo->Address->Name->LastName,
-                    'company'  => (string) $order->ShipTo->Address->CompanyName,
-                    'address'  => (string) $order->ShipTo->Address->StreetAddress1,
-                    'address2' => (string) $order->ShipTo->Address->StreetAddress2,
-                    'city'     => (string) $order->ShipTo->Address->City,
-                    'state'    => (string) $order->ShipTo->Address->StateProvCode,
-                    'zip'      => (string) $order->ShipTo->Address->ZipPostalCode,
-                    'country'  => (string) $order->ShipTo->Address->CountryCode,
-                    'phone'    => (string) $order->ShipTo->Address->PhoneNumber,
-                );
+				
+				if(!empty($order->ShipTo->Address)) {
+					$o->shippingAddress  = array(
+						'firstName'=> (string) $order->ShipTo->Address->Name->FirstName,
+						'lastName' => (string) $order->ShipTo->Address->Name->LastName,
+						'company'  => (string) $order->ShipTo->Address->CompanyName,
+						'address'  => (string) $order->ShipTo->Address->StreetAddress1,
+						'address2' => (string) $order->ShipTo->Address->StreetAddress2,
+						'city'     => (string) $order->ShipTo->Address->City,
+						'state'    => (string) $order->ShipTo->Address->StateProvCode,
+						'zip'      => (string) $order->ShipTo->Address->ZipPostalCode,
+						'country'  => (string) $order->ShipTo->Address->CountryCode,
+						'phone'    => (string) $order->ShipTo->Address->PhoneNumber,
+					);
+				}
 
                 // Add Product(s).
                 if (isset($order->ShipTo->ShipFrom->LineItem)) {

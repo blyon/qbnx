@@ -145,9 +145,8 @@ class QuickbooksController
 
     public function addSalesReceipt($order, $customer)
     {
-        return $this->_processSalesReceiptAddResponse(
-            $this->_createSalesReceiptFromOrder($order, $customer)
-        );
+        $resp = $this->_createSalesReceiptFromOrder($order, $customer);
+        return $this->_processSalesReceiptAddResponse($resp);
     }
 
 
@@ -431,7 +430,7 @@ class QuickbooksController
 
         $request->Name->setValue                        ($customer->firstName.' '.$customer->lastName);
         $request->FirstName->setValue                   ($customer->firstName);
-        $request->CustomerTypeRef->FullName->setValue   ("Wholesale");
+        $request->CustomerTypeRef->FullName->setValue   ($customer->type);
         $request->LastName->setValue                    ($customer->lastName);
         $request->Email->setValue                       ($customer->email);
         if(!empty($customer->phone)) {
@@ -492,7 +491,9 @@ class QuickbooksController
 
         // Payment Method.
         if(!empty($order->paymentMethod['type'])) {
-            $request->PaymentMethodRef->FullName->setValue(   $order->paymentMethod['type']);
+		    if ($order->paymentMethod['type'] == "Credit Card") {
+			    $request->PaymentMethodRef->FullName->setValue(   $order->paymentMethod['cardType']);
+			}
         }
 
         // Sales Tax.
@@ -511,16 +512,18 @@ class QuickbooksController
             $request->BillAddress->Note->setValue(        $order->billingAddress['phone']);
         }
 
-        // Shipping Address.
-        $request->ShipAddress->Addr1->setValue(           $order->shippingAddress['address']);
-        $request->ShipAddress->Addr2->setValue(           $order->shippingAddress['address2']);
-        $request->ShipAddress->City->setValue(            $order->shippingAddress['city']);
-        $request->ShipAddress->State->setValue(           $order->shippingAddress['state']);
-        $request->ShipAddress->PostalCode->setValue(      $order->shippingAddress['zip']);
-        $request->ShipAddress->Country->setValue(         $order->shippingAddress['country']);
-        if(isset($order->shippingAddress['phone'])) {
-            $request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
-        }
+        // Shipping Address. 
+		if(!empty($order->shippingAddress)) {
+			$request->ShipAddress->Addr1->setValue(           $order->shippingAddress['address']);
+			$request->ShipAddress->Addr2->setValue(           $order->shippingAddress['address2']);
+			$request->ShipAddress->City->setValue(            $order->shippingAddress['city']);
+			$request->ShipAddress->State->setValue(           $order->shippingAddress['state']);
+			$request->ShipAddress->PostalCode->setValue(      $order->shippingAddress['zip']);
+			$request->ShipAddress->Country->setValue(         $order->shippingAddress['country']);
+			if(isset($order->shippingAddress['phone'])) {
+				$request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
+			}
+		}
   
         // Products.
         foreach ($order->products as $product) {
@@ -557,6 +560,12 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->Amount->setValue(             $order->shipTotal);
         }
         $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(            $order_date);
+		
+		if ($order->paymentMethod['type'] == "Credit Card") {
+			//card is masked cant add
+			//print_r($order->paymentMethod);
+			//exit;
+		}
     
         $request->Other->setValue("N" . preg_replace("/^N/", "", $order->id));
 
