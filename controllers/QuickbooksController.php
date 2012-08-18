@@ -145,7 +145,8 @@ class QuickbooksController
 
     public function addSalesReceipt($order, $customer)
     {
-        $resp = $this->_createSalesReceiptFromOrder($order, $customer);
+	    $resp = $this->_createSalesReceiptFromOrder($order, $customer);
+		print $resp->ToXMLString();
         return $this->_processSalesReceiptAddResponse($resp);
     }
 
