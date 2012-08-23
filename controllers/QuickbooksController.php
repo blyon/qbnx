@@ -287,7 +287,7 @@ class QuickbooksController
      */
     private function _createSalesReceiptQuery($txnId=null, $refId=null, $dateRange=null)
     {
-        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".implode(":", $dateRange).")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".print_r($dateRange, true).")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
 
