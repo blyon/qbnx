@@ -42,7 +42,7 @@ class QuickbooksController
         return $customer[0];
     }
 
-    
+
      /**
      * Get create custom field for customer
      */
@@ -63,7 +63,7 @@ class QuickbooksController
         return $customer[0];
     }
 
-    
+
      /**
      * Get Customer from Quickbooks by full name and Email
      */
@@ -81,7 +81,7 @@ class QuickbooksController
         }
     }
 
-    
+
     /**
      * Get Sales Receipt by Quickbooks Transaction ID.
      *
@@ -98,7 +98,7 @@ class QuickbooksController
 
 
     /**
-     * Create customer in QB 
+     * Create customer in QB
      *
      * @param customer
      *
@@ -186,7 +186,7 @@ class QuickbooksController
         return $this->_qb->sendRequest();
     }
 
-    
+
     private function _createCustomerQueryFullNameandEmail($name)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$name.")");
@@ -197,7 +197,7 @@ class QuickbooksController
         return $this->_qb->sendRequest();
     }
 
-    
+
     private function _processCustomerQueryResponse($response,$email = FALSE)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
@@ -247,7 +247,7 @@ class QuickbooksController
         return $customers;
     }
 
-    
+
     private function _processCustomerCreateResponse($response)
     {
         if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
@@ -255,10 +255,10 @@ class QuickbooksController
             $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
             return false;
         }
-        
+
         $d = $response->ResponseList->GetAt(0)->Detail;
         //$d = $details->GetAt(0);
-                
+
         $c = new Customer;
         $c->company        = $this->_getValue($d,'CompanyName');
         $c->type           = $this->_getValue($d->CustomerTypeRef,'FillName');
@@ -276,9 +276,9 @@ class QuickbooksController
         }
 
         return $c;
-    
+
     }
-    
+
     /**
      * Query for a specific Sales Receipt.
      *
@@ -300,7 +300,7 @@ class QuickbooksController
             $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->ORTxnDateRangeFilter->TxnDateFilter->FromTxnDate->setValue(date('Y-m-d', $dateRange['from']));
             $query->ORTxnQuery->TxnFilter->ORDateRangeFilter->TxnDateRangeFilter->ORTxnDateRangeFilter->TxnDateFilter->ToTxnDate->setValue(date('Y-m-d', $dateRange['to']));
         }
-    
+
         return $this->_qb->sendRequest();
     }
 
@@ -313,7 +313,7 @@ class QuickbooksController
      */
     private function _processSalesReceiptQueryResponse($response)
     {
-  
+
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $orders = array();
 
@@ -384,9 +384,9 @@ class QuickbooksController
                         $o->products[] = $item;
                     }
                 }
-             
+
 	        $o->nexternalId = $this->_getValue($d,'Other');
-		
+
                 $orders[] = $o;
 
                 // write Orders to File if we've reached our cache cap.
@@ -399,7 +399,7 @@ class QuickbooksController
         return $orders;
     }
 
-    
+
     /**
      * Create a custom feild used to store nexternal ID's
      */
@@ -462,11 +462,11 @@ class QuickbooksController
              //$request->CreditCardInfo->ExpirationMonth->setValue($date_parts[0]);
              //$request->CreditCardInfo->ExpirationYear->setValue($date_parts[1]);
         }
-    
+
         return $this->_qb->sendRequest();
     }
 
-    
+
     /**
      * Create Sales Receipt from Order.
      * Sales Receipt appended to $this->_qb.
@@ -498,8 +498,10 @@ class QuickbooksController
         }
 
         // Sales Tax.
-        if(isset( $order->qbTxn) && !empty($order->qbTxn)) {
-            $request->ItemSalesTaxRef->FullName->setValue(    $order->qbTxn);
+        if (!empty($order->taxTotal)) {
+            $request->ItemSalesTaxRef->FullName->setValue($order->taxTotal);
+        } else {
+            $request->ItemSalesTaxRef->FullName->setValue("Out of State");
         }
 
         // Billing Address.
@@ -513,7 +515,7 @@ class QuickbooksController
             $request->BillAddress->Note->setValue(        $order->billingAddress['phone']);
         }
 
-        // Shipping Address. 
+        // Shipping Address.
 		if(!empty($order->shippingAddress)) {
 			$request->ShipAddress->Addr1->setValue(           $order->shippingAddress['address']);
 			$request->ShipAddress->Addr2->setValue(           $order->shippingAddress['address2']);
@@ -525,7 +527,7 @@ class QuickbooksController
 				$request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
 			}
 		}
-  
+
         // Products.
         foreach ($order->products as $product) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
@@ -561,13 +563,13 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->Amount->setValue(             $order->shipTotal);
         }
         $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(            $order_date);
-		
+
 		if ($order->paymentMethod['type'] == "Credit Card") {
 			//card is masked cant add
 			//print_r($order->paymentMethod);
 			//exit;
 		}
-    
+
         $request->Other->setValue("N" . preg_replace("/^N/", "", $order->id));
 
         return $this->_qb->sendRequest();
