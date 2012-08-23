@@ -134,12 +134,15 @@ class Util
     /**
      * Convert Time Argument to seconds.
      *
-     * @param string $duration day, week, month, year
+     * @param string $duration 'day', 'week', 'month', 'year', or numeric string
      *
      * @return integer
      */
     public static function convertTime($duration)
     {
+        if (preg_match("/^[0-9]+$/", $duration)) {
+            return (int) $duration;
+        }
         switch ($duration) {
             case 'day':
                 return (60 * 60 * 24);
