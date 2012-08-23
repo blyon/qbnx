@@ -51,8 +51,7 @@ class Log
             $this->directory .= "/";
         }
 
-        //$file = $this->directory . date('Y-m-d_H:i:s') . ".log";
-        $file = $this->directory . "test.log";
+        $file = $this->directory . date('Y-m-d_H:i:s') . ".log";
         if (FALSE === ($this->_fh = fopen($file, "a"))) {
             throw new Exception("Failed to create log file: " . $file);
         }
