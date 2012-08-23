@@ -164,7 +164,7 @@ class Util
      */
     public static function validateTime($time)
     {
-        return (in_array($time, array('day','week','month','year')));
+        return (preg_match("/^[0-9]+$/", $time) || in_array($time, array('day','week','month','year')));
     }
 
 
