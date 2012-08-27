@@ -13,6 +13,23 @@ require_once dirname(__FILE__) . '/../controllers/NexternalController.php';
 require_once dirname(__FILE__) . '/../controllers/QuickbooksController.php';
 
 
+function testTaxCode(){
+    $log            = Log::getInstance();
+    $totalCustomers = 0;
+    $totalOrders    = 0;
+
+    // Connect to Nexternal.
+    $nexternal = new NexternalController();
+    $order = $nexternal->getOrderbyID('126377');
+    $order = $order['0'];
+    print_r($order);
+	$quickbooks = new QuickbooksController();
+	$qb_check = $quickbooks->RequestTaxItem('.16');
+	if(!$qb_check)
+	$quickbooks->CreateSalesTax('.16');
+}
+
+
 function testCreateCustomers() {
     $log            = Log::getInstance();
     $totalCustomers = 0;

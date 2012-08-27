@@ -145,8 +145,7 @@ class QuickbooksController
 
     public function addSalesReceipt($order, $customer)
     {
-	    $resp = $this->_createSalesReceiptFromOrder($order, $customer);
-		print $resp->ToXMLString();
+        $resp = $this->_createSalesReceiptFromOrder($order, $customer);;
         return $this->_processSalesReceiptAddResponse($resp);
     }
 
@@ -356,7 +355,7 @@ class QuickbooksController
                     'state'     => $this->_getValue($d->BillAddress,'State'),
                     'zip'       => $this->_getValue($d->BillAddress,'PostalCode'),
                     'country'   => $this->_getValue($d->BillAddress,'Country'),
-		    'phone'     => $this->_getValue($d->BillAddress,'Note'),
+                    'phone'     => $this->_getValue($d->BillAddress,'Note'),
                 );
                 $o->shippingAddress = array(
                     'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
@@ -365,7 +364,7 @@ class QuickbooksController
                     'state'     => $this->_getValue($d->ShipAddress,'State'),
                     'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
                     'country'   => $this->_getValue($d->ShipAddress,'Country'),
-		    'phone'     => $this->_getValue($d->ShipAddress,'Note'),
+                    'phone'     => $this->_getValue($d->ShipAddress,'Note'),
                 );
                 $o->products        = array();
                 $o->discounts       = array();
@@ -415,7 +414,44 @@ class QuickbooksController
         $resp =  $this->_qb->sendRequest();
 
     }
+    
+    /**
+     * Create a custom feild used to store nexternal ID's
+     */
+    public function CreateSalesTax($code,$taxVendorRef="State Board of Equalization") {
 
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        $request = $this->_qb->request->AppendItemSalesTaxAddRq();
+        $request->Name->setValue($code.'sbe');
+        $request->TaxRate->setValue($code);
+        $request->ItemDesc->setValue($code."sbe - Tax Rate Generated for Nexternal Sync");
+        $request->TaxVendorRef->FullName->setValue($taxVendorRef);
+        $resp =  $this->_qb->sendRequest();
+        if($resp->ResponseList->GetAt(0)->StatusCode == 1) {
+            return FALSE;
+        }
+        elseif($resp->ResponseList->GetAt(0)->StatusCode == 0) {
+            return $code;
+        }
+    }
+    
+    
+    /**
+     * Checks to see if a tax item exists, if it does return it
+     */
+    public function RequestTaxItem($code) {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        $request = $this->_qb->request->AppendItemSalesTaxQueryRq();
+        $request->ORListQuery->ListFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(0);
+        $request->ORListQuery->ListFilter->ORNameFilter->NameFilter->Name->setValue($code.'sbe');
+        $resp =  $this->_qb->sendRequest();
+        if($resp->ResponseList->GetAt(0)->StatusCode == 1) {
+            return FALSE;
+        }
+        elseif($resp->ResponseList->GetAt(0)->StatusCode == 0) {
+            return $code;
+        }
+    }
 
     /**
      * Create New Customer from Customer.
@@ -492,11 +528,13 @@ class QuickbooksController
 
         // Payment Method.
         if(!empty($order->paymentMethod['type'])) {
-		    if ($order->paymentMethod['type'] == "Credit Card") {
-			    $request->PaymentMethodRef->FullName->setValue(   $order->paymentMethod['cardType']);
-			}
+        if ($order->paymentMethod['type'] == "Credit Card") {
+                $request->PaymentMethodRef->FullName->setValue(   $order->paymentMethod['cardType']);
+            }
         }
-
+        if(!$quickbooks->RequestTaxItem($order->taxTotal)) {
+            $order->taxTotal = $quickbooks->CreateSalesTax($order->taxTotal);
+        }
         // Sales Tax.
         if (!empty($order->taxTotal)) {
             $request->ItemSalesTaxRef->FullName->setValue($order->taxTotal);
@@ -516,17 +554,17 @@ class QuickbooksController
         }
 
         // Shipping Address.
-		if(!empty($order->shippingAddress)) {
-			$request->ShipAddress->Addr1->setValue(           $order->shippingAddress['address']);
-			$request->ShipAddress->Addr2->setValue(           $order->shippingAddress['address2']);
-			$request->ShipAddress->City->setValue(            $order->shippingAddress['city']);
-			$request->ShipAddress->State->setValue(           $order->shippingAddress['state']);
-			$request->ShipAddress->PostalCode->setValue(      $order->shippingAddress['zip']);
-			$request->ShipAddress->Country->setValue(         $order->shippingAddress['country']);
-			if(isset($order->shippingAddress['phone'])) {
-				$request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
-			}
-		}
+        if(!empty($order->shippingAddress)) {
+            $request->ShipAddress->Addr1->setValue(           $order->shippingAddress['address']);
+            $request->ShipAddress->Addr2->setValue(           $order->shippingAddress['address2']);
+            $request->ShipAddress->City->setValue(            $order->shippingAddress['city']);
+            $request->ShipAddress->State->setValue(           $order->shippingAddress['state']);
+            $request->ShipAddress->PostalCode->setValue(      $order->shippingAddress['zip']);
+            $request->ShipAddress->Country->setValue(         $order->shippingAddress['country']);
+            if(isset($order->shippingAddress['phone'])) {
+                $request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
+            }
+        }
 
         // Products.
         foreach ($order->products as $product) {
@@ -564,11 +602,11 @@ class QuickbooksController
         }
         $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(            $order_date);
 
-		if ($order->paymentMethod['type'] == "Credit Card") {
-			//card is masked cant add
-			//print_r($order->paymentMethod);
-			//exit;
-		}
+        if ($order->paymentMethod['type'] == "Credit Card") {
+            //card is masked cant add
+            //print_r($order->paymentMethod);
+            //exit;
+        }
 
         $request->Other->setValue("N" . preg_replace("/^N/", "", $order->id));
 
