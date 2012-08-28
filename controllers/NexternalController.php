@@ -593,7 +593,7 @@ class NexternalController
                 );
                 
                 if(!empty($order->ShipTo->Address)) {
-                    $o->qbTxn = $order->ShipTo->SalesTaxRate;
+                    $o->qbTxn = (string)$order->ShipTo->SalesTaxRate;
                     $o->shippingAddress  = array(
                         'firstName'=> (string) $order->ShipTo->Address->Name->FirstName,
                         'lastName' => (string) $order->ShipTo->Address->Name->LastName,

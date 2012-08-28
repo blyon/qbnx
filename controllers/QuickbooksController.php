@@ -532,12 +532,12 @@ class QuickbooksController
                 $request->PaymentMethodRef->FullName->setValue(   $order->paymentMethod['cardType']);
             }
         }
-        if(!$quickbooks->RequestTaxItem($order->taxTotal)) {
-            $order->taxTotal = $quickbooks->CreateSalesTax($order->taxTotal);
+        if(!$quickbooks->RequestTaxItem($order->qbTxn)) {
+            $order->qbTxn = $quickbooks->CreateSalesTax($order->qbTxn);
         }
         // Sales Tax.
-        if (!empty($order->taxTotal)) {
-            $request->ItemSalesTaxRef->FullName->setValue($order->taxTotal);
+        if (!empty($order->qbTxn)) {
+            $request->ItemSalesTaxRef->FullName->setValue($order->qbTxn);
         } else {
             $request->ItemSalesTaxRef->FullName->setValue("Out of State");
         }
