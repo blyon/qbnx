@@ -20,6 +20,11 @@ function testTaxCode(){
 
     // Connect to Nexternal.
     $nexternal = new NexternalController();
+    // Authenticate with Nexternal.
+    if (!$nexternal->authenticate()) {
+        throw new Exception("Nexternal Authentication Failed.");
+    }
+    
     $order = $nexternal->getOrderbyID('126377');
     $order = $order['0'];
     print_r($order);
