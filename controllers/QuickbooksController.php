@@ -443,8 +443,8 @@ class QuickbooksController
     private function _requestTaxItem($code)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
-        if (!preg_match("/".preg_quote($code.self::TAXCODE_SUFFIX)."$/")) {
-            $code .= $self::TAXCODE_SUFFIX;
+        if (!preg_match("/^".preg_quote($code.self::TAXCODE_SUFFIX)."$/", $code)) {
+            $code .= self::TAXCODE_SUFFIX;
         }
         $request = $this->_qb->request->AppendItemSalesTaxQueryRq();
         $request->ORListQuery->ListFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(0);
@@ -498,7 +498,7 @@ class QuickbooksController
 
         // Credit Card.
         if ($order->paymentMethod['type'] == "Credit Card") {
-            $log->write(Log::WARN, "Creditcard is Masked");
+            $this->log->write(Log::WARN, "Creditcard is Masked");
              //cant set because CC is masked
              //$request->CreditCardInfo->CreditCardNumber->SetAsString($order->paymentMethod['cardNumber']);
              //$date_parts = explode("/",$order->paymentMethod['cardNumber']);
@@ -610,7 +610,7 @@ class QuickbooksController
         $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(            $order_date);
 
         if ($order->paymentMethod['type'] == "Credit Card") {
-            $log->write(Log::WARN, "Creditcard is Masked");
+            $this->log->write(Log::WARN, "Creditcard is Masked");
             //card is masked cant add
             //print_r($order->paymentMethod);
             //exit;
