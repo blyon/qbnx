@@ -591,9 +591,9 @@ class NexternalController
                     'country'  => (string) $order->BillTo->Address->CountryCode,
                     'phone'    => (string) $order->BillTo->Address->PhoneNumber,
                 );
-                
-                if(!empty($order->ShipTo->Address)) {
-                    $o->qbTxn = (string)$order->ShipTo->SalesTaxRate;
+
+                if (!empty($order->ShipTo->Address)) {
+                    $o->taxRate = (string)$order->ShipTo->SalesTaxRate;
                     $o->shippingAddress  = array(
                         'firstName'=> (string) $order->ShipTo->Address->Name->FirstName,
                         'lastName' => (string) $order->ShipTo->Address->Name->LastName,

@@ -15,6 +15,7 @@ require_once dirname(__FILE__) . '/../models/Quickbooks.php';
 
 class QuickbooksController
 {
+    const TAXCODE_SUFFIX = 'sbe';
     private $_qb;
     public $log;
 
@@ -217,7 +218,7 @@ class QuickbooksController
 
             for ($n=0; $n<$details->Count; $n++) {
                 $d = $details->GetAt($n);
-            if(!$email || ($this->_getValue($d,'Email') == $email)) {
+                if (!$email || ($this->_getValue($d,'Email') == $email)) {
                     $c = new Customer;
                     $c->company     = $this->_getValue($d,'CompanyName');
                     $c->type        = $this->_getValue($d->CustomerTypeRef,'FillName');
@@ -226,7 +227,7 @@ class QuickbooksController
                     $c->firstName   = $this->_getValue($d,'FirstName');
                     $c->lastName    = $this->_getValue($d,'LastName');
                     $c->fullName    = $this->_getValue($d,'FullName');
-                   if ($d->DataExtRetList) {
+                    if ($d->DataExtRetList) {
                         for ($e=0; $e<$d->DataExtRetList->Count; $e++) {
                             if ("NexternalId" == $d->DataExtRetList->GetAt($e)->DataExtName->getValue) {
                                 $c->nexternalId = $d->DataExtRetList->GetAt($e)->DataExtValue->getValue;
@@ -266,7 +267,7 @@ class QuickbooksController
         $c->firstName      = $this->_getValue($d,'FirstName');
         $c->lastName       = $this->_getValue($d,'LastName');
         $c->fullName       = $this->_getValue($d,'FullName');
-       if ($d->DataExtRetList) {
+        if ($d->DataExtRetList) {
             for ($e=0; $e<$d->DataExtRetList->Count; $e++) {
                 if ("NexternalId" == $d->DataExtRetList->GetAt($e)->DataExtName->getValue) {
                     $c->nexternalId = $d->DataExtRetList->GetAt($e)->DataExtValue->getValue;
@@ -275,8 +276,8 @@ class QuickbooksController
         }
 
         return $c;
-
     }
+
 
     /**
      * Query for a specific Sales Receipt.
@@ -338,6 +339,7 @@ class QuickbooksController
                 //$o->status;
                 $o->subTotal        = $this->_getValue($d,'Subtotal');
                 $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
+                $o->taxRate         = $this->_getValue($d,'SalesTaxPercentage');
                 //$o->shipTotal;
                 $o->total           = $this->_getValue($d,'TotalAmount');
                 $o->memo            = $this->_getValue($d,'Memo');
@@ -384,7 +386,7 @@ class QuickbooksController
                     }
                 }
 
-	        $o->nexternalId = $this->_getValue($d,'Other');
+                $o->nexternalId = $this->_getValue($d,'Other');
 
                 $orders[] = $o;
 
@@ -414,36 +416,39 @@ class QuickbooksController
         $resp =  $this->_qb->sendRequest();
 
     }
-    
+
     /**
      * Create a custom feild used to store nexternal ID's
      */
-    public function CreateSalesTax($code,$taxVendorRef="State Board of Equalization") {
-
+    private function _createSalesTax($rate, $taxVendorRef="State Board of Equalization")
+    {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $request = $this->_qb->request->AppendItemSalesTaxAddRq();
-        $request->Name->setValue($code.'sbe');
-        $request->TaxRate->setValue($code);
-        $request->ItemDesc->setValue($code."sbe - Tax Rate Generated for Nexternal Sync");
+        $request->Name->setValue($rate.self::TAXCODE_SUFFIX);
+        $request->TaxRate->setValue($rate);
+        $request->ItemDesc->setValue($rate.self::TAXCODE_SUFFIX." - Tax Rate Generated for Nexternal Sync");
         $request->TaxVendorRef->FullName->setValue($taxVendorRef);
         $resp =  $this->_qb->sendRequest();
-        if($resp->ResponseList->GetAt(0)->StatusCode == 1) {
+        if ($resp->ResponseList->GetAt(0)->StatusCode == 1) {
             return FALSE;
-        }
-        elseif($resp->ResponseList->GetAt(0)->StatusCode == 0) {
-            return $code;
+        } elseif ($resp->ResponseList->GetAt(0)->StatusCode == 0) {
+            return $rate.self::TAXCODE_SUFFIX;
         }
     }
-    
-    
+
+
     /**
      * Checks to see if a tax item exists, if it does return it
      */
-    public function RequestTaxItem($code) {
+    private function _requestTaxItem($code)
+    {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        if (!preg_match("/".preg_quote($code.self::TAXCODE_SUFFIX)."$/")) {
+            $code .= $self::TAXCODE_SUFFIX;
+        }
         $request = $this->_qb->request->AppendItemSalesTaxQueryRq();
         $request->ORListQuery->ListFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(0);
-        $request->ORListQuery->ListFilter->ORNameFilter->NameFilter->Name->setValue($code.'sbe');
+        $request->ORListQuery->ListFilter->ORNameFilter->NameFilter->Name->setValue($code);
         $resp =  $this->_qb->sendRequest();
         if($resp->ResponseList->GetAt(0)->StatusCode == 1) {
             return FALSE;
@@ -452,6 +457,7 @@ class QuickbooksController
             return $code;
         }
     }
+
 
     /**
      * Create New Customer from Customer.
@@ -492,6 +498,7 @@ class QuickbooksController
 
         // Credit Card.
         if ($order->paymentMethod['type'] == "Credit Card") {
+            $log->write(Log::WARN, "Creditcard is Masked");
              //cant set because CC is masked
              //$request->CreditCardInfo->CreditCardNumber->SetAsString($order->paymentMethod['cardNumber']);
              //$date_parts = explode("/",$order->paymentMethod['cardNumber']);
@@ -522,22 +529,22 @@ class QuickbooksController
         $request->RefNumber->setValue(                    "N" . preg_replace("/^N/", "", $order->id));
         $request->TxnDate->setValue(                      $order_date);
         $request->CustomerRef->FullName->setValue(        $customer->fullName);
-        if(isset($order->memo) && !empty($order->memo)) {
-            $request->Memo->setValue(                         $order->memo);
+        if (isset($order->memo) && !empty($order->memo)) {
+            $request->Memo->setValue($order->memo);
         }
 
         // Payment Method.
-        if(!empty($order->paymentMethod['type'])) {
-        if ($order->paymentMethod['type'] == "Credit Card") {
-                $request->PaymentMethodRef->FullName->setValue(   $order->paymentMethod['cardType']);
-            }
+        if (!empty($order->paymentMethod['type']) && $order->paymentMethod['type'] == "Credit Card") {
+            $request->PaymentMethodRef->FullName->setValue($order->paymentMethod['cardType']);
         }
-        if(!$quickbooks->RequestTaxItem($order->qbTxn)) {
-            $order->qbTxn = $quickbooks->CreateSalesTax($order->qbTxn);
-        }
+
         // Sales Tax.
-        if (!empty($order->qbTxn)) {
-            $request->ItemSalesTaxRef->FullName->setValue($order->qbTxn);
+        if (!empty($order->taxRate)) {
+            $code = $this->_requestTaxItem($order->taxRate);
+            if ($code == false) {
+                $code = $this->_createSalesTax($order->taxRate);
+            }
+            $request->ItemSalesTaxRef->FullName->setValue($code);
         } else {
             $request->ItemSalesTaxRef->FullName->setValue("Out of State");
         }
@@ -547,21 +554,21 @@ class QuickbooksController
         $request->BillAddress->Addr2->setValue(           $order->billingAddress['address2']);
         $request->BillAddress->City->setValue(            $order->billingAddress['city']);
         $request->BillAddress->State->setValue(           $order->billingAddress['state']);
-        $request->BillAddress->PostalCode ->setValue(     $order->billingAddress['zip']);
+        $request->BillAddress->PostalCode->setValue(      $order->billingAddress['zip']);
         $request->BillAddress->Country->setValue(         $order->billingAddress['country']);
-        if(isset($order->billingAddress['phone'])) {
+        if (isset($order->billingAddress['phone'])) {
             $request->BillAddress->Note->setValue(        $order->billingAddress['phone']);
         }
 
         // Shipping Address.
-        if(!empty($order->shippingAddress)) {
+        if (!empty($order->shippingAddress)) {
             $request->ShipAddress->Addr1->setValue(           $order->shippingAddress['address']);
             $request->ShipAddress->Addr2->setValue(           $order->shippingAddress['address2']);
             $request->ShipAddress->City->setValue(            $order->shippingAddress['city']);
             $request->ShipAddress->State->setValue(           $order->shippingAddress['state']);
             $request->ShipAddress->PostalCode->setValue(      $order->shippingAddress['zip']);
             $request->ShipAddress->Country->setValue(         $order->shippingAddress['country']);
-            if(isset($order->shippingAddress['phone'])) {
+            if (isset($order->shippingAddress['phone'])) {
                 $request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
             }
         }
@@ -588,7 +595,7 @@ class QuickbooksController
         // Discounts.
         foreach ($order->discounts as $discount) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(  'DISCOUNT');
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   'DISCOUNT');
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                $discount['type'].$discount['name']);
             $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount['value']);
         }
@@ -597,12 +604,13 @@ class QuickbooksController
         $lineItem = $request->ORSalesReceiptLineAddList->Append();
         $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(      "SHIPPING");
         $lineItem->SalesReceiptLineAdd->Desc->setValue(                   "Shipping & Handling");
-        if(!empty($order->shipTotal)) {
+        if (!empty($order->shipTotal)) {
             $lineItem->SalesReceiptLineAdd->Amount->setValue(             $order->shipTotal);
         }
         $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(            $order_date);
 
         if ($order->paymentMethod['type'] == "Credit Card") {
+            $log->write(Log::WARN, "Creditcard is Masked");
             //card is masked cant add
             //print_r($order->paymentMethod);
             //exit;
@@ -642,6 +650,7 @@ class QuickbooksController
         $o->timestamp       = $this->_getValue($d,'TxnDate');
         $o->subTotal        = $this->_getValue($d,'Subtotal');
         $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
+        $o->taxRate         = $this->_getValue($d,'SalesTaxPercentage');
         $o->total           = $this->_getValue($d,'TotalAmount');
         $o->memo            = $this->_getValue($d,'Memo');
         $o->location;

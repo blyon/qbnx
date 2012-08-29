@@ -9,6 +9,7 @@ class Order
     public $status;
     public $subTotal;
     public $taxTotal;
+    public $taxRate;
     public $shipTotal;
     public $total;
     public $memo;
