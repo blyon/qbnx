@@ -522,7 +522,21 @@ class QuickbooksController
     private function _createSalesReceiptFromOrder(Order $order, Customer $customer)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+
+        // Query for Sales Tax.
+        $code = '';
+        if (!empty($order->taxRate)) {
+            $code = $this->_requestTaxItem($order->taxRate);
+            if ($code == false) {
+                $code = $this->_createSalesTax($order->taxRate);
+            }
+        } else {
+            $code = 'Out of State';
+        }
+
+        // Build Request.
         $request = $this->_qb->request->AppendSalesReceiptAddRq();
+        $request->ItemSalesTaxRef->FullName->setValue($code);
         $order_date = date ('m/d/Y',$order->timestamp);
 
         $request->DepositToAccountRef->FullName->setValue('Undeposited Funds');
