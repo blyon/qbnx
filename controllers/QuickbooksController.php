@@ -18,7 +18,7 @@ class QuickbooksController
     const TAXCODE_SUFFIX = 'sbe';
     private $_qb;
     public $log;
-
+    public $last_error;
 
     /**
      * Authenticate with Quickbooks Server.
@@ -253,6 +253,7 @@ class QuickbooksController
         if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
             $this->log->write(Log::NOTICE, "customer not created");
             $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            $this->last_error = $response->ResponseList->GetAt(0)->StatusMessage;
             return false;
         }
 
@@ -649,11 +650,13 @@ class QuickbooksController
 
         if (!$response->ResponseList->Count) {
             $this->log->write(Log::ERROR, "Failed to retrieve SalesReceipt Create Response");
+            $this->last_error = "Failed to retrieve SalesReceipt Create Response";
             return false;
         }
         if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
             $this->log->write(Log::NOTICE, "Failed to create Sales Receipt");
             $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            $this->last_error = $response->ResponseList->GetAt(0)->StatusMessage;
             return false;
         }
 

@@ -12,73 +12,6 @@ require_once dirname(__FILE__) . '/Util.php';
 require_once dirname(__FILE__) . '/../controllers/NexternalController.php';
 require_once dirname(__FILE__) . '/../controllers/QuickbooksController.php';
 
-
-function testTaxCode(){
-    $log            = Log::getInstance();
-    $totalCustomers = 0;
-    $totalOrders    = 0;
-
-    // Connect to Nexternal.
-    $nexternal = new NexternalController();
-    // Authenticate with Nexternal.
-    if (!$nexternal->authenticate()) {
-        throw new Exception("Nexternal Authentication Failed.");
-    }
-    
-    $order = $nexternal->getOrderbyID('126377');
-    $order = $order['0'];
-    print_r($order);
-    $quickbooks = new QuickbooksController();
-    $qb_check = $quickbooks->RequestTaxItem('.16');
-    if(!$qb_check)
-    $quickbooks->CreateSalesTax('.16');
-}
-
-
-function testCreateCustomers() {
-    $log            = Log::getInstance();
-    $totalCustomers = 0;
-    $totalOrders    = 0;
-
-    // Connect to Nexternal.
-    $nexternal = new NexternalController();
-
-    // Authenticate with Nexternal.
-    if (!$nexternal->authenticate()) {
-        throw new Exception("Nexternal Authentication Failed.");
-    }
-
-    // Connect to Quickbooks.
-    $quickbooks = new QuickbooksController();
-
-    // Check for failed auth.
-    if (!$nexternal || !$quickbooks) {
-        return false;
-    }
-   
-    // Test order FROM QB to Nexternal
-    // Grab a test customer from QB to save into Nexternal
-    //$customer = $quickbooks->getCustomerbyName('Farah Kraus');
-    //$customer = $quickbooks->getCustomerbyName('Farah Kraus');  
-    //$order = $quickbooks->getSalesReceiptByOrderId('N124275');
-    //$new_cust = $nexternal->createCustomers(array($customer),$order['0']);
-
-    $customer = $nexternal->getCustomer('17185');
-    print_r($customer);
-    
-    $customer->firstName = 'Todd';
-    $customer->lastName = 'Budzins';
-    
-    $order = $nexternal->getOrderbyID('126377');
-    $order = $order['0'];
-    print_r($order);
-    
-    $customer = $quickbooks->createCustomer($customer,$order);
-    print_r($customer);
-    
-}
-
-
 /**
  * Push Data modified in the given date range from Nexternal to Quickbooks.
  *
@@ -94,7 +27,8 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
     $log            = Log::getInstance();
     $totalCustomers = 0;
     $totalOrders    = 0;
-
+    $errors = array();
+    
     // Connect to Nexternal.
     $nexternal = new NexternalController();
 
@@ -155,10 +89,15 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
                             $customer = $quickbooks->createCustomer($nx_customer,$nxOrder);
                         }
                         if($customer != FALSE) {
-                            $quickbooks->addSalesReceipt($nxOrder, $customer);
+                            $created_order = $quickbooks->addSalesReceipt($nxOrder, $customer);
                         }
                         else {
-                            printf("Could not create customer for Order %d\n", $nxOrder->id);
+                            $errors[] = "Could not create customer for Order ".$nxOrder->id." ".$quickbooks->last_error."\n";
+                            unset($nxOrder);
+                        }
+                        
+                        if($created_order == FALSE)) {
+                            $errors[] = "Could not create Order ".$nxOrder->id." ".$quickbooks->last_error."\n";
                             unset($nxOrder);
                         }
                     }
@@ -209,15 +148,20 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
                     }
                     if($customer != FALSE) {
                         printf("Adding to QB order %d\n", $nxOrder->id);
-                        $quickbooks->addSalesReceipt($nxOrder, $customer);
+                        $created_order = $quickbooks->addSalesReceipt($nxOrder, $customer);
                     }
                     else {
-                        printf("Could not create customer for Order %d\n", $nxOrder->id);
+                        $errors[] = "Could not create customer for Order ".$nxOrder->id." ".$quickbooks->last_error;
                         unset($nxOrder);
                     }
+                    
+                    if($created_order == FALSE)) {
+                        $errors[] = "Could not create Order ".$nxOrder->id." ".$quickbooks->last_error;
+                        unset($nxOrder);
+                    }
+                    
                 }
                 else {
-                    printf("Order %d Exists in QB\n", $nxOrder->id);
                     unset($nxOrder);
                 }
             }
@@ -225,6 +169,19 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
 
         printf("Total Orders Sent to QB: %d\n", $totalOrders);
     }
+    
+    $to      = 'tbudzins@gmail.com';
+    $subject = 'Order report for toesox';
+    $headers = 'From: admin@toesox.com' . "\r\n" .
+        'Reply-To: admin@toesox.com' . "\r\n" .
+        'X-Mailer: PHP/' . phpversion();
+
+    $message = "Total Orders Sent to QB: %d\n", $totalOrders."\n";
+    if(!empty($errors))
+        $message .= implode("\n",$errors);
+    
+    mail($to, $subject, $message, $headers);
+
 }
 
 
@@ -243,7 +200,8 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
     $log            = Log::getInstance();
     $totalCustomers = 0;
     $totalOrders    = 0;
-
+    $errors = array();
+    
     // Connect to Nexternal.
     $nexternal = new NexternalController();
 
@@ -295,7 +253,11 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
                         printf("Nexternal customer %d created\n", $customer->id);
                     }
                     if($customer == FALSE) {
-                        $nexternal->createOrder($qbOrder, $customer);
+                        $created_order = $nexternal->createOrder($qbOrder, $customer);
+                    }
+                    
+                    if($created_order == FALSE) {
+                        $errors[] = "Could not create customer for Order ".$qbOrder->id;
                     }
                 }
             }
@@ -331,10 +293,27 @@ function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
                 }
                 
                 if($customer == FALSE) {
-                    $nexternal->createOrder($qbOrder, $customer);
+                    $created_order = $nexternal->createOrder($qbOrder, $customer);
                 }
+                
+                if($created_order == FALSE) {
+                   $errors[] = "Could not create customer for Order ".$qbOrder->id;
+                }
+                
             }
         }
         printf("Total Orders Sent to Nexternal: %d\n", $totalOrders);
     }
+    
+    $to      = 'tbudzins@gmail.com';
+    $subject = 'Order report for toesox';
+    $headers = 'From: admin@toesox.com' . "\r\n" .
+        'Reply-To: admin@toesox.com' . "\r\n" .
+        'X-Mailer: PHP/' . phpversion();
+
+    $message = "Total Orders Sent to Nexternal: %d\n", $totalOrders."\n";
+    if(!empty($errors))
+        $message .= implode("\n",$errors);
+    
+    mail($to, $subject, $message, $headers);
 }
