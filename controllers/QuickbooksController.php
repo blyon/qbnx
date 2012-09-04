@@ -129,6 +129,22 @@ class QuickbooksController
 
 
     /**
+     * Get Invoices by Date.
+     *
+     * @param integer $from Start Date
+     * @param integer $to   End Date
+     *
+     * return array Array of Order Objects.
+     */
+    public function getInvoicesByDate($from, $to)
+    {
+        return $this->_processInvoiceQueryResponse(
+            $this->_createInvoiceQuery(null, null, array('from' => $from, 'to' => $to))
+        );
+    }
+
+
+    /**
      * Get Sales Receipt by Date.
      *
      * @param integer $from Start Date
@@ -281,9 +297,136 @@ class QuickbooksController
 
 
     /**
-     * Query for a specific Sales Receipt.
+     * Query for Invoice(s).
      *
-     * @param string $id Sales Receipt ID.
+     * @param string $txnId     Invoice ID.
+     * @param string $refId     Reference ID.
+     * @param array  $dateRange Date Range ('to' => int, 'from' => int)
+     *
+     * @return type
+     */
+    private function _createInvoiceQuery($txnId=null, $refId=null, $dateRange=null)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".print_r($dateRange, true).")");
+
+        $query = $this->_qb->request->AppendInvoiceQueryRq();
+
+        if ($txnId) {
+            $query->ORInvoiceQuery->InvoiceFilter->InvoiceIDList->setValue($txnId);
+        } elseif ($refId) {
+            $query->ORInvoiceQuery->InvoiceFilter->ORRefNumberFilter->RefNumberFilter->MatchCriterion->setValue(2);
+            $query->ORInvoiceQuery->InvoiceFilter->ORRefNumberFilter->RefNumberFilter->RefNumber->setValue($refId);
+        } elseif ($dateRange) {
+            $query->ORInvoiceQuery->InvoiceFilter->ORDateRangeFilter->TxnDateRangeFilter->ORTxnDateRangeFilter->TxnDateFilter->FromTxnDate->setValue(date('Y-m-d', $dateRange['from']));
+            $query->ORInvoiceQuery->InvoiceFilter->ORDateRangeFilter->TxnDateRangeFilter->ORTxnDateRangeFilter->TxnDateFilter->ToTxnDate->setValue(date('Y-m-d', $dateRange['to']));
+        }
+
+        return $this->_qb->sendRequest();
+    }
+
+
+    /**
+     * Parse Invoice Query Response.
+     *
+     * @param type $response
+     * @return array Array of Order Objects.
+     */
+    private function _processInvoiceQueryResponse($response)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        $orders = array();
+
+        if (!$response->ResponseList->Count) {
+            $this->log->write(Log::ERROR, "Failed to retrieve Invoice List");
+            return $orders;
+        }
+        if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
+            $this->log->write(Log::NOTICE, "No Invoices found");
+            $this->log->write(Log::NOTICE, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            return $orders;
+        }
+
+        for ($i=0; $i<$response->ResponseList->Count; $i++) {
+            $details = &$response->ResponseList->GetAt($i)->Detail;
+            for ($n=0; $n<$details->Count; $n++) {
+                $d = $details->GetAt($n);
+                $o = new Order;
+                $o->qbTxn           = $this->_getValue($d,'TxnID');
+                $o->id              = $this->_getValue($d,'RefNumber');
+                $o->timestamp       = variant_date_to_timestamp($this->_getValue($d,'TxnDate'));
+                //$o->type;
+                //$o->status;
+                $o->subTotal        = $this->_getValue($d,'Subtotal');
+                $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
+                $o->taxRate         = $this->_getValue($d,'SalesTaxPercentage');
+                //$o->shipTotal;
+                $o->total           = $this->_getValue($d,'TotalAmount');
+                $o->memo            = $this->_getValue($d,'Memo');
+                $o->location;
+                $o->ip;
+                $o->paymentStatus;
+                $o->paymentMethod;
+                if (isset($d->CustomerRef)) {
+                    $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
+                }
+                $o->billingAddress  = array(
+                    'address'   => $this->_getValue($d->BillAddress,'Addr1'),
+                    'address2'  => $this->_getValue($d->BillAddress,'Addr2'),
+                    'city'      => $this->_getValue($d->BillAddress,'City'),
+                    'state'     => $this->_getValue($d->BillAddress,'State'),
+                    'zip'       => $this->_getValue($d->BillAddress,'PostalCode'),
+                    'country'   => $this->_getValue($d->BillAddress,'Country'),
+                    'phone'     => $this->_getValue($d->BillAddress,'Note'),
+                );
+                $o->shippingAddress = array(
+                    'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
+                    'address2'  => $this->_getValue($d->ShipAddress,'Addr2'),
+                    'city'      => $this->_getValue($d->ShipAddress,'City'),
+                    'state'     => $this->_getValue($d->ShipAddress,'State'),
+                    'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
+                    'country'   => $this->_getValue($d->ShipAddress,'Country'),
+                    'phone'     => $this->_getValue($d->ShipAddress,'Note'),
+                );
+                $o->products        = array();
+                $o->discounts       = array();
+                $o->giftCerts       = array();
+                if ($d->ORSalesReceiptLineRetList) {
+                    for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
+                        $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
+                        $item = array(
+                            'type'      => $this->_getValue($line->ItemRef,'ListID'),
+                            'name'      => $this->_getValue($line->ItemRef,'FullName'),
+                            'qty'       => $this->_getValue($line->ItemRef,'Quantity'),
+                            'price'     => $this->_getValue($line->ItemRef,'Amount'),
+                            'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
+                        );
+                        // @TODO: Product, Discount, or Gift Cert?
+                        $o->products[] = $item;
+                    }
+                }
+
+                $o->nexternalId = $this->_getValue($d,'Other');
+
+                $orders[] = $o;
+
+                // write Orders to File if we've reached our cache cap.
+                if (MEMORY_CAP <= memory_get_usage()) {
+                    Util::writeCache(QUICKBOOKS_ORDER_CACHE, $orders);
+                    $orders = array();
+                }
+            }
+        }
+        return $orders;
+    }
+
+
+    /**
+     * Query for Sales Receipt(s).
+     *
+     * @param string $txnId     Sales Receipt ID.
+     * @param string $refId     Reference ID.
+     * @param array  $dateRange Date Range ('to' => int, 'from' => int)
+     *
      * @return type
      */
     private function _createSalesReceiptQuery($txnId=null, $refId=null, $dateRange=null)
