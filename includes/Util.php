@@ -260,7 +260,7 @@ class Util
             fclose($rfh);
         }
 
-        system("7za.exe e -y " . $local);
+        system("7za.exe x -y " . $local);
         unlink($local);
     }
 
