@@ -9,7 +9,6 @@ class Quickbooks
     private static $__instance;
     private $_sm;
     private $_qbfcVersion;
-    private $_ticket;
     private $_docroot;
     private $_appName;
     public  $request;

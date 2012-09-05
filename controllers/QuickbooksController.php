@@ -144,7 +144,7 @@ class QuickbooksController
 
     public function addSalesReceipt($order, $customer)
     {
-        $resp = $this->_createSalesReceiptFromOrder($order, $customer);;
+        $resp = $this->_createSalesReceiptFromOrder($order, $customer);
         return $this->_processSalesReceiptAddResponse($resp);
     }
 
@@ -653,6 +653,17 @@ class QuickbooksController
             $code = 'Out of State';
         }
 
+        // Sales Tax.
+        if (!empty($order->taxRate)) {
+            $code = $this->_requestTaxItem($order->taxRate);
+            if ($code == false) {
+                $code = $this->_createSalesTax($order->taxRate);
+            }
+            $request->ItemSalesTaxRef->FullName->setValue($code);
+        } else {
+            $request->ItemSalesTaxRef->FullName->setValue("Out of State");
+        }
+
         // Build Request.
         $request = $this->_qb->request->AppendSalesReceiptAddRq();
         $request->ItemSalesTaxRef->FullName->setValue($code);
@@ -669,17 +680,6 @@ class QuickbooksController
         // Payment Method.
         if (!empty($order->paymentMethod['type']) && $order->paymentMethod['type'] == "Credit Card") {
             $request->PaymentMethodRef->FullName->setValue($order->paymentMethod['cardType']);
-        }
-
-        // Sales Tax.
-        if (!empty($order->taxRate)) {
-            $code = $this->_requestTaxItem($order->taxRate);
-            if ($code == false) {
-                $code = $this->_createSalesTax($order->taxRate);
-            }
-            $request->ItemSalesTaxRef->FullName->setValue($code);
-        } else {
-            $request->ItemSalesTaxRef->FullName->setValue("Out of State");
         }
 
         // Billing Address.
