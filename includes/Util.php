@@ -255,4 +255,13 @@ class Util
         fclose($fh);
         system("unzip update.zip");
     }
+
+
+    public static function sendMail($to, $subject, $body) {
+        $headers = 'From: no-reply@toesox.com' . "\r\n" .
+            'Reply-To: no-reply@toesox.com' . "\r\n" .
+            'X-Mailer: PHP/' . phpversion();
+
+        mail($to, $subject, $body, $headers);
+    }
 }
