@@ -653,17 +653,6 @@ class QuickbooksController
             $code = 'Out of State';
         }
 
-        // Sales Tax.
-        if (!empty($order->taxRate)) {
-            $code = $this->_requestTaxItem($order->taxRate);
-            if ($code == false) {
-                $code = $this->_createSalesTax($order->taxRate);
-            }
-            $request->ItemSalesTaxRef->FullName->setValue($code);
-        } else {
-            $request->ItemSalesTaxRef->FullName->setValue("Out of State");
-        }
-
         // Build Request.
         $request = $this->_qb->request->AppendSalesReceiptAddRq();
         $request->ItemSalesTaxRef->FullName->setValue($code);
