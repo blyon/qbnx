@@ -42,7 +42,7 @@ Util::parseArgs($args);
 
 // Check for required args, help, and valid time.
 if ($args['h']
-    || (!$args['q'] && !$args['n'])
+    || (!$args['q'] && !$args['n'] && !$args['u'])
     || !Util::validateTime($args['t'])
 ) {
     Util::showHelp();

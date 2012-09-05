@@ -10,7 +10,7 @@
 
 DEFINE('START_TIME',                time());
 DEFINE('MEMORY_CAP',                104857600); // 100 MB
-DEFINE('ROOT_DIR',                  dirname(__FILE__) . "/cache/");
+DEFINE('ROOT_DIR',                  dirname(__FILE__));
 DEFINE('CACHE_DIR',                 ROOT_DIR . "/cache/");
 DEFINE('CACHE_EXT',                 '.cache');
 DEFINE('NEXTERNAL_ORDER_CACHE',     'NexternalOrders');

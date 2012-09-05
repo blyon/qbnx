@@ -243,21 +243,25 @@ class Util
      */
     public static function downloadUpdate()
     {
-        $file = "https://github.com/blyon/qbnx/zipball/master";
+        $remote = "https://github.com/blyon/qbnx/zipball/master";
+        $local  = CACHE_DIR . "update.zip";
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 0);
-        curl_setopt($ch, CURLOPT_URL, $file);
+        if (($rfh = fopen($remote, "rb"))) {
+            if (($lfh = fopen($local, "wb"))) {
+                while (!feof($rfh)) {
+                    if (!fwrite($lfh, fread($rfh, 1024*8), 1024*8)) {
+                        fclose($lfh);
+                        fclose($rfh);
+                        throw new Exception("Failed to download latest code changes!");
+                    }
+                }
+                fclose($lfh);
+            }
+            fclose($rfh);
+        }
 
-        $response = curl_exec($ch);
-
-        curl_close($ch);
-
-        $fh = fopen("update.zip","w");
-        fwrite($fh, $response);
-        fclose($fh);
-        system("7za.exe x update.zip " . ROOT_DIR . "/test/");
-        unlink("update.zip");
+        system("7za.exe e -y " . $local);
+        unlink($local);
     }
 
 
