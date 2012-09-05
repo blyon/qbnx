@@ -238,6 +238,9 @@ class Util
     }
 
 
+    /**
+     * Download and install the latest version of the code from Github.
+     */
     public static function downloadUpdate()
     {
         $file = "https://github.com/blyon/qbnx/zipball/master";
@@ -253,10 +256,18 @@ class Util
         $fh = fopen("update.zip","w");
         fwrite($fh, $response);
         fclose($fh);
-        system("unzip update.zip");
+        system("7za.exe x update.zip " . ROOT_DIR . "/test/");
+        unlink("update.zip");
     }
 
 
+    /**
+     * Send Email.
+     *
+     * @param string $to
+     * @param string $subject
+     * @param string $body
+     */
     public static function sendMail($to, $subject, $body) {
         $headers = 'From: no-reply@toesox.com' . "\r\n" .
             'Reply-To: no-reply@toesox.com' . "\r\n" .

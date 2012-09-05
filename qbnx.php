@@ -33,6 +33,7 @@ $args = array(
     'q' => false,   // Push data to QuickBooks.
     'n' => false,   // Push data to Nexternal.
     't' => 'week',  // Time duration of data to push.
+    'u' => false,   // Update Script.
 );
 
 
@@ -49,6 +50,13 @@ if ($args['h']
 }
 
 try {
+    // Update Script from Github.
+    if ($args['u']) {
+        Util::sendMail(MAIL_UPDATES, "ToeSox Code Update", "A code update request has been received!");
+        Util::downloadUpdate();
+        exit();
+    }
+
     // Check for Quickbooks Argument.
     if ($args['q']) {
         pushNexternalToQuickbooks(
