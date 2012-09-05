@@ -79,6 +79,13 @@ try {
     }
 } catch (Exception $e) {
     $log = Log::getInstance();
-    $log->write(Log::ALERT, print_r($e, true));
-    Util::sendMail(MAIL_EXCEPTIONS, "ToeSox Exception Handler", print_r($e,true));
+    $log->write(Log::ALERT, $e->getMessage());
+    Util::sendMail(MAIL_EXCEPTIONS, "ToeSox Exception Handler", implode("\n", array(
+        $e->getMessage(),
+        sprintf("File: %s", $e->getFile()),
+        sprintf("Line: %s", $e->getLine()),
+        "",
+        "STACK TRACE:",
+        $e->getTraceAsString()
+    )));
 }
