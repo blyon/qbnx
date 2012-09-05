@@ -62,7 +62,6 @@ try {
         pushNexternalToQuickbooks(
             START_TIME - Util::convertTime($args['t']),
             START_TIME,
-            true,
             true
         );
     }
@@ -73,7 +72,6 @@ try {
         pushQuickbooksToNexternal(
             START_TIME - Util::convertTime($args['t']),
             START_TIME,
-            true,
             true
         );
     }

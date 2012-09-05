@@ -611,6 +611,13 @@ class NexternalController
                 // Add Product(s).
                 if (isset($order->ShipTo->ShipFrom->LineItem)) {
                     foreach ($order->ShipTo->ShipFrom->LineItem as $lineItem) {
+                        // Skip if no SKU.
+                        if ("" == (string) $lineItem->LineProduct->ProductSKU) {
+                            $this->log->write(Log::WARN,
+                                sprintf("Skipping Product [%s: %s] No SKU", $lineItem->LineProduct->ProductNo, $lineItem->LineProduct->ProductName)
+                            );
+                            continue;
+                        }
                         $o->products[] = array(
                             'sku'       => (string) $lineItem->LineProduct->ProductSKU,
                             'name'      => (string) $lineItem->LineProduct->ProductName,

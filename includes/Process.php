@@ -22,7 +22,7 @@ require_once dirname(__FILE__) . '/../controllers/QuickbooksController.php';
  *
  * @return boolean
  */
-function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
+function pushNexternalToQuickbooks($from, $to, $orders=true)
 {
     $totalOrders = 0;
     $errors = array();
@@ -139,11 +139,10 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$totalOrders, &$nxCustomers, &$
  * @param integer $from      Beginning Date Range
  * @param integer $to        End Date Range
  * @param boolean $orders    Push Order Data?
- * @param boolean $customers Push Customer Data?
  *
  * @return boolean
  */
-function pushQuickbooksToNexternal($from, $to, $orders=true, $customers=true)
+function pushQuickbooksToNexternal($from, $to, $orders=true)
 {
     $log            = Log::getInstance();
     $totalCustomers = 0;

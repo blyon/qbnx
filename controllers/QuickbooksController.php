@@ -40,7 +40,11 @@ class QuickbooksController
         $customer = $this->_processCustomerQueryResponse(
             $this->_createCustomerQuery($id)
         );
-        return $customer[0];
+        if (empty($customer)) {
+            $this->log->write(Log::NOTICE, sprintf("Could not find Customer by Name[%s].", $name));
+            return false;
+        }
+        return array_shift($customer);
     }
 
 
@@ -61,7 +65,11 @@ class QuickbooksController
         $customer = $this->_processCustomerQueryResponse(
             $this->_createCustomerQueryFullName($name)
         );
-        return $customer[0];
+        if (empty($customer)) {
+            $this->log->write(Log::NOTICE, sprintf("Could not find Customer by Name[%s].", $name));
+            return false;
+        }
+        return array_shift($customer);
     }
 
 
