@@ -190,7 +190,7 @@ class NexternalController
                 $id
             )
         );
-      
+
 
         // Add Order(s) to Array.
         foreach ($response['orders'] as $order) {
@@ -238,7 +238,7 @@ class NexternalController
             // Send XML to Nexternal if we have 15 customers in the queue, or if
             // this is the last customer in the array.
             $customersInQueue = count($this->_nx->dom->children('Customer'));
- 
+
             if (Nexternal::CUSTUPDATE_MAX == $customersInQueue
                 || $cid == $lastCustomer
             ) {
@@ -499,7 +499,7 @@ class NexternalController
         return $responseDom;
     }
 
-    
+
     /**
      * Query Nexternal for Order by ID.
      *
@@ -778,10 +778,11 @@ class NexternalController
         $c->type        = (string) $customer->CustomerType;
         $c->firstName   = (string) $customer->Address->Name->FirstName;
         $c->lastName    = (string) $customer->Address->Name->LastName;
+        $c->company     = (string) $customer->Address->CompanyName;
         return $c;
     }
 
-    
+
     /**
      * Prepare Customer for creation on Nexternal.
      *
