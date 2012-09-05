@@ -615,7 +615,11 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $request = $this->_qb->request->AppendCustomerAddRq();
 
-        $request->Name->setValue                        ($customer->firstName.' '.$customer->lastName);
+        if ("consumer" == strtolower($customer->type)) {
+            $request->Name->setValue                    ($customer->firstName.' '.$customer->lastName);
+        } else {
+            $request->Name->setValue                    ($customer->company);
+        }
         $request->FirstName->setValue                   ($customer->firstName);
         $request->CustomerTypeRef->FullName->setValue   ($customer->type);
         $request->LastName->setValue                    ($customer->lastName);
