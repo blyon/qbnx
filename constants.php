@@ -16,3 +16,6 @@ DEFINE('NEXTERNAL_ORDER_CACHE',     'NexternalOrders');
 DEFINE('NEXTERNAL_CUSTOMER_CACHE',  'NexternalCustomers');
 DEFINE('QUICKBOOKS_ORDER_CACHE',    'QuickbooksOrders');
 DEFINE('QUICKBOOKS_CUSTOMER_CACHE', 'QuickbooksCustomers');
+DEFINE('MAIL_EXCEPTIONS',           'tbudzins@gmail.com, brandon@lyonaround.com');
+DEFINE('MAIL_ERRORS',               'tbudzins@gmail.com, brandon@lyonaround.com');
+DEFINE('MAIL_SUCCESS',              'tbudzins@gmail.com, brandon@lyonaround.com');

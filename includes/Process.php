@@ -65,9 +65,9 @@ function pushNexternalToQuickbooks($from, $to, $orders=true, $customers=true)
     // Send Email
     $message = sprintf("Total Orders Sent to QB: %d\n", $totalOrders);
     if (!empty($errors)) {
-        $message .= implode("\n", $errors);
+        Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", implode("\n", $errors));
     }
-    Util::sendMail("tbudzins@gmail.com", "Order Report for ToeSox", $message);
+    Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox", $message);
 }
 
 
@@ -107,15 +107,14 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$totalOrders, &$nxCustomers, &$
                 ? $quickbooks->getCustomerbyName('f')
                 : (!empty($nx_customer->quickbooksId)
                     ? $quickbooks->getCustomer($nx_customer->quickbooksId)
-                    : $quickbooks->getCustomerbyNameandEmail(
-                        $nx_customer->firstName.' '.$nx_customer->lastName,
-                        $nx_customer->email)
+                    : $quickbooks->getCustomerByName($nx_customer->company
                     )
-                );
+                )
+            );
             // Create the Customer if Customer not found.
             if (!$customer) {
                 if (!($customer = $quickbooks->createCustomer($nx_customer,$nxOrder))) {
-                    $errors[] = sprintf("Could not create Customer for Order[%s] - %s", $nxOrder->id, $quickbooks->last_error);
+                    $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $nx_customer->type, $nxOrder->id, $quickbooks->last_error);
                     $log->write(Log::ERROR, end($errors));
                     continue;
                 }

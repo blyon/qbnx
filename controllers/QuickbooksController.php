@@ -65,24 +65,6 @@ class QuickbooksController
     }
 
 
-     /**
-     * Get Customer from Quickbooks by full name and Email
-     */
-    public function getCustomerbyNameandEmail($name,$email)
-    {
-        $customer = $this->_processCustomerQueryResponse(
-           $this->_createCustomerQueryFullName($name),
-           $email
-        );
-        if(isset($customer[0])) {
-            return $customer[0];
-        }
-        else {
-            return FALSE;
-        }
-    }
-
-
     /**
      * Get Sales Receipt by Quickbooks Transaction ID.
      *
@@ -193,17 +175,6 @@ class QuickbooksController
 
 
     private function _createCustomerQueryFullName($name)
-    {
-        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$name.")");
-
-        $query = $this->_qb->request->AppendCustomerQueryRq();
-        $query->OwnerIDList->add(0);
-        $query->ORCustomerListQuery->FullNameList->add($name);
-        return $this->_qb->sendRequest();
-    }
-
-
-    private function _createCustomerQueryFullNameandEmail($name)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$name.")");
 

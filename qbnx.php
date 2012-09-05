@@ -26,7 +26,7 @@ require_once dirname(__FILE__) . '/constants.php';
 require_once dirname(__FILE__) . '/includes/Util.php';
 require_once dirname(__FILE__) . '/includes/Process.php';
 
- 
+
 // Script Arguments.
 $args = array(
     'h' => false,   // Show Help.
@@ -48,23 +48,29 @@ if ($args['h']
     exit();
 }
 
-// Check for Quickbooks Argument.
-if ($args['q']) {
-    pushNexternalToQuickbooks(
-        START_TIME - Util::convertTime($args['t']),
-        START_TIME,
-        true,
-        true
-    );
-}
+try {
+    // Check for Quickbooks Argument.
+    if ($args['q']) {
+        pushNexternalToQuickbooks(
+            START_TIME - Util::convertTime($args['t']),
+            START_TIME,
+            true,
+            true
+        );
+    }
 
 
-// Check for Nexternal Argument.
-if ($args['n']) {
-    pushQuickbooksToNexternal(
-        START_TIME - Util::convertTime($args['t']),
-        START_TIME,
-        true,
-        true
-    );
+    // Check for Nexternal Argument.
+    if ($args['n']) {
+        pushQuickbooksToNexternal(
+            START_TIME - Util::convertTime($args['t']),
+            START_TIME,
+            true,
+            true
+        );
+    }
+} catch (Exception $e) {
+    $log = Log::getInstance();
+    $log->write(Log::ALERT, print_r($e, true));
+    Util::sendMail(MAIL_EXCEPTIONS, "ToeSox Exception Handler", print_r($e,true));
 }
