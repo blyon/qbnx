@@ -224,7 +224,7 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
             continue;
         }
         // Skip if Customer is black listed.
-        if (in_array($qbOrder->customer, TOESOX_INTERNAL_CUSTOMERS)) {
+        if (in_array($qbOrder->customer, explode(" ", TOESOX_INTERNAL_CUSTOMERS))) {
             unset($qbOrders[$k]);
             continue;
         }
