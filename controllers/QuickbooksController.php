@@ -252,8 +252,14 @@ class QuickbooksController
             return false;
         }
 
-        $d = $response->ResponseList->GetAt(0)->Detail;
-        //$d = $details->GetAt(0);
+        $details = $response->ResponseList->GetAt(0)->Detail;
+        if (!$details->Count) {
+            $this->log->write(Log::ERROR, "No response data for Customer Create.");
+            return false;
+        } elseif ($details->Count > 1) {
+            $this->log->write(Log::WARN, sprintf("Customer Create Response returned [%d] Records.", $details->Count));
+        }
+        $d = $details->GetAt(0);
 
         $c = new Customer;
         $c->company        = $this->_getValue($d,'CompanyName');
@@ -778,7 +784,14 @@ class QuickbooksController
             return false;
         }
 
-        $d = &$response->ResponseList->GetAt(0)->Detail;
+        $details = &$response->ResponseList->GetAt(0)->Detail;
+        if (!$details->Count) {
+            $this->log->write(Log::ERROR, "No response data for Customer Create.");
+            return false;
+        } elseif ($details->Count > 1) {
+            $this->log->write(Log::WARN, sprintf("Sales Receipt Add Response returned [%d] Records.", $details->Count));
+        }
+        $d = $details->GetAt(0);
         $o = new Order;
         $o->qbTxn           = $this->_getValue($d,'TxnID');
         $o->id              = $this->_getValue($d,'RefNumber');
