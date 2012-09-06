@@ -661,7 +661,7 @@ class QuickbooksController
                 $code = $this->_createSalesTax($order->taxRate);
             }
         } else {
-            $code = 'Out of State';
+            $code = 'Out of State (' . self::TAXCODE_SUFFIX . ')';
         }
 
         // Build Request.

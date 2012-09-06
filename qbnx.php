@@ -78,7 +78,7 @@ try {
 } catch (Exception $e) {
     $log = Log::getInstance();
     $log->write(Log::ALERT, $e->getMessage());
-    Util::sendMail(MAIL_EXCEPTIONS, "ToeSox Exception Handler", implode("\n", array(
+    Util::sendMail(MAIL_EXCEPTIONS, "Start Time: %s\nEnd Time: %s\n\nToeSox Exception Handler", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), implode("\n", array(
         $e->getMessage(),
         sprintf("File: %s", $e->getFile()),
         sprintf("Line: %s", $e->getLine()),

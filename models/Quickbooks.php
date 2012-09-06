@@ -11,6 +11,7 @@ class Quickbooks
     private $_qbfcVersion;
     private $_docroot;
     private $_appName;
+    private $_ticket;
     public  $request;
     public  $log;
 
@@ -61,7 +62,7 @@ class Quickbooks
     {
         Util::deleteCache(QUICKBOOKS_ORDER_CACHE);
         Util::deleteCache(QUICKBOOKS_CUSTOMER_CACHE);
-        //$this->_sm->EndSession($this->_ticket);
+        $this->_sm->EndSession();
         $this->_sm->CloseConnection();
     }
 
