@@ -68,7 +68,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
     // Send Email
     $message = sprintf("Total Orders Sent to QB: %d\n", $totalOrders);
     if (!empty($errors)) {
-        Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", "The following Errors occurred while pushing Orders from Nexternal to Quickbooks\n\n\n" . implode("\n", $errors));
+        Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", "The following Errors occurred while pushing Orders from Nexternal to Quickbooks.\n\n\n\n" . implode("\n\n", $errors));
     }
     Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox (NX->QB)", $message);
 }
