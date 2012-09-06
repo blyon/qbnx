@@ -176,24 +176,25 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
         if (file_exists(CACHE_DIR . QUICKBOOKS_ORDER_CACHE . CACHE_EXT)) {
             // Save orders to cache and process cache.
             Util::writeCache(QUICKBOOKS_ORDER_CACHE, serialize($qbOrders));
-            $totalOrders = 0;
+            $totalOrders = array();
             while (null !== ($cacheOrders = Util::readCache(QUICKBOOKS_ORDER_CACHE))) {
                 $qbOrders = unserialize($cacheOrders);
                 unset($cacheOrders);
                 $result = _pushQuickbooksToNexternal($qbOrders, $nxCustomers, $nexternal, $quickbooks);
-                $totalOrders += $result['sentOrders'];
+                $totalOrders = array_merge($totalOrders, $result['sentOrders']);
                 $errors = array_merge($errors, $result['errors']);
             }
         } else {
             $result = _pushQuickbooksToNexternal($qbOrders, $nxCustomers, $nexternal, $quickbooks);
-            $totalOrders += $result['sentOrders'];
+            $totalOrders = array_merge($totalOrders, $result['sentOrders']);
             $errors = array_merge($errors, $result['errors']);
         }
-        printf("Total Orders Sent to NX: %d\n", $totalOrders);
+        printf("Total Orders Sent to NX: %d\n", count($totalOrders));
     }
 
     // Send Email
-    $message = sprintf("Total Orders Sent to NX: %d\n", $totalOrders);
+    $message = sprintf("Total Orders Sent to NX: %d\n\n\nOrder Numbers:\n%s", count($totalOrders), implode("\n\t", $totalOrders));
+
     if (!empty($errors)) {
         Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", "The following Errors occurred while pushing Orders from Quickbooks to Nexternal\n\n\n" . implode("\n", $errors));
     }
