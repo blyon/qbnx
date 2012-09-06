@@ -227,7 +227,6 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
     foreach ($qbOrders as $qbOrder) {
         // Skip if the order initiated from Nexternal.
         if (preg_match('/^N/', $qbOrder->id)) {
-            unset($qbOrders[$key]);
             continue;
         }
         $qb_customer = $qbCustomers[$qbOrder->customer];
@@ -238,14 +237,14 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
         } else {
             $result = $nexternal->createCustomers(array($qb_customer), $qbOrder);
             if (!empty($result['errors'])) {
-                $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $nxOrder->id, print_r($result['errors'],true));
+                $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $qbOrder->id, print_r($result['errors'],true));
                 $log->write(Log::ERROR, end($errors));
                 continue;
             }
             if (empty($result['customers'])) {
                 $errors[] = sprintf("An Unknown Error occurred when creating Customer[%s] for Order[%s] - %s",
                     $qb_customer->type,
-                    $nxOrder->id,
+                    $qbOrder->id,
                     print_r($result['errors'], true)
                 );
                 $log->write(Log::ERROR, end($errors));
@@ -259,10 +258,11 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
                 continue;
             } else {
                 $log->write(Log::INFO, sprintf("Nexternal Customer[%s] pushed to Quickbooks.", $customer->id));
+                $qb_customer->nexternalId = $customer->nexternalId;
             }
 
             // Create Order.
-            if (false !== ($oid = $neternal->createOrder($qbOrder, $customer))) {
+            if (false !== ($oid = $neternal->createOrder($qbOrder, $qb_customer))) {
                 $sentOrders[] = $oid;
             } else {
                 $errors[] = sprintf("Failed to migrate Order[%s] to Nexternal.", $qbOrder->id);

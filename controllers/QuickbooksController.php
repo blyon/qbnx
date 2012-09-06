@@ -216,7 +216,7 @@ class QuickbooksController
                 if (!$email || ($this->_getValue($d,'Email') == $email)) {
                     $c = new Customer;
                     $c->company     = $this->_getValue($d,'CompanyName');
-                    $c->type        = $this->_getValue($d->CustomerTypeRef,'FillName');
+                    $c->type        = $this->_getValue($d->CustomerTypeRef,'FullName');
                     $c->email       = $this->_getValue($d,'Email');
                     $c->quickbooksId   = $this->_getValue($d,'ListID');
                     $c->firstName   = $this->_getValue($d,'FirstName');

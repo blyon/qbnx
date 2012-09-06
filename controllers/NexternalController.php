@@ -221,10 +221,12 @@ class NexternalController
      */
     public function createCustomers($customers, Order $order)
     {
-        $return = array('errors' => 0, 'customers' => array());
+        $return = array('errors' => array(), 'customers' => array());
 
         // Get the arraykey of the last customer.
-        $lastCustomer = end(array_keys($customers));
+        end($customers);
+        $lastCustomer = key($customers);
+        reset($customers);
 
         // Loop over the customers array.
         foreach ($customers as $cid => $customer) {
@@ -247,13 +249,11 @@ class NexternalController
                     $return['errors'][$cid] = $response['errors'];
                     continue;
                 } else {
-                    $c = new Customer;
-                    $c->id          = (string) $response['customers'][0]->id;
-                    $c->email       = (string) $response['customers'][0]->email;
-                    $c->type        = (string) $response['customers'][0]->type;
-                    $c->firstName   = (string) $response['customers'][0]->FirstName;
-                    $c->lastName    = (string) $response['customers'][0]->LastName;
-                    $return['customers'][$cid] = $c;
+                    if (empty($response['customers'])) {
+                        $return['errors'][$cid] = array("No Customer Found");
+                        continue;
+                    }
+                    $return['customers'][$cid] = current($response['customers']);
                 }
             }
         }
@@ -741,6 +741,11 @@ class NexternalController
             'errors'    => array(),
         );
 
+        if (!is_object($dom)) {
+            $return['errors'][] = "Invalid DOM Object.";
+            return $return;
+        }
+
         // Process Errors.
         if (count($dom->children('Errors'))) {
             $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
@@ -859,6 +864,13 @@ class NexternalController
             'errors'    => array(),
         );
 
+        // Make sure we have an object.
+        if (!is_object($dom)) {
+            $return['errors'][] = "Invalid DOM Object.";
+            return $return;
+        }
+
+
         // Process Errors.
         if (count($dom->children('Errors'))) {
             $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
@@ -872,9 +884,11 @@ class NexternalController
         if (isset($dom->Customer)) {
             foreach ($dom->Customer as $customer) {
                 $c = new Customer;
-                $c->id      = (string) $customer->CustomerNo;
-                $c->email   = (string) $customer->Email;
-                $c->type    = (string) $customer->CustomerType;
+                $c->id          = (string) $customer->CustomerNo;
+                $c->nexternalId = (string) $customer->CustomerNo;
+                $c->email       = (string) $customer->Email;
+                $c->firstName   = (string) $customer->Name->FirstName;
+                $c->lastName    = (string) $customer->Name->LastName;
 
                 $return['customers'][] = $c;
             }
