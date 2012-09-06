@@ -369,7 +369,7 @@ class QuickbooksController
                 $o->products        = array();
                 $o->discounts       = array();
                 $o->giftCerts       = array();
-                if ($d->ORSalesReceiptLineRetList) {
+                if (isset($d->ORSalesReceiptLineRetList)) {
                     for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
                         $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
                         $item = array(
@@ -541,7 +541,6 @@ class QuickbooksController
         return (0 != $response->ResponseList->GetAt(0)->StatusCode)
             ? false
             : true;
-        }
     }
 
     /**
