@@ -17,6 +17,7 @@ DEFINE('NEXTERNAL_ORDER_CACHE',     'NexternalOrders');
 DEFINE('NEXTERNAL_CUSTOMER_CACHE',  'NexternalCustomers');
 DEFINE('QUICKBOOKS_ORDER_CACHE',    'QuickbooksOrders');
 DEFINE('QUICKBOOKS_CUSTOMER_CACHE', 'QuickbooksCustomers');
+DEFINE('TOESOX_INTERNAL_CUSTOMERS',  array('80003CBE-1336668106','80003D05-1341509624','80003D0B-1342458686','3240000-1220036156','80003CCD-1336771446'));
 DEFINE('MAIL_UPDATES',              'tbudzins@gmail.com, brandon@lyonaround.com');
 DEFINE('MAIL_EXCEPTIONS',           'tbudzins@gmail.com, brandon@lyonaround.com');
 DEFINE('MAIL_ERRORS',               'tbudzins@gmail.com, brandon@lyonaround.com, denise@toesox.com, sseibert@toesox.com, jpatterson@toesox.com, italybarry@yahoo.com');

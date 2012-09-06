@@ -218,7 +218,7 @@ class QuickbooksController
                     $c->company     = $this->_getValue($d,'CompanyName');
                     $c->type        = $this->_getValue($d->CustomerTypeRef,'FullName');
                     $c->email       = $this->_getValue($d,'Email');
-                    $c->quickbooksId   = $this->_getValue($d,'ListID');
+                    $c->quickbooksId= $this->_getValue($d,'ListID');
                     $c->firstName   = $this->_getValue($d,'FirstName');
                     $c->lastName    = $this->_getValue($d,'LastName');
                     $c->fullName    = $this->_getValue($d,'FullName');
@@ -263,7 +263,7 @@ class QuickbooksController
 
         $c = new Customer;
         $c->company        = $this->_getValue($d,'CompanyName');
-        $c->type           = $this->_getValue($d->CustomerTypeRef,'FillName');
+        $c->type           = $this->_getValue($d->CustomerTypeRef,'FullName');
         $c->email          = $this->_getValue($d,'Email');
         $c->quickbooksId   = $this->_getValue($d,'ListID');
         $c->firstName      = $this->_getValue($d,'FirstName');
@@ -902,7 +902,7 @@ class QuickbooksController
     private function _getValue(&$object, $attribute)
     {
         if (!is_object($object)) {
-            $this->log->write(Log::ALERT, "Invalid Object specified for Attribute: " . $attribute);
+            $this->log->write(Log::WARN, "Invalid Object specified for Attribute: " . $attribute);
         }
         if (property_exists($object, $attribute) && is_object($object->$attribute)) {
             return $object->$attribute->getValue;

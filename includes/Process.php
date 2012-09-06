@@ -217,7 +217,17 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
     $qbCustomers= array();
 
     // Get Order Customers.
-    foreach ($qbOrders as $qbOrder) {
+    foreach ($qbOrders as $k => $qbOrder) {
+        // Skip if the order initiated from Nexternal.
+        if (preg_match('/^N/', $qbOrder->id)) {
+            unset($qbOrders[$k]);
+            continue;
+        }
+        // Skip if Customer is black listed.
+        if (in_array($qbOrder->customer, TOESOX_INTERNAL_CUSTOMERS)) {
+            unset($qbOrders[$k]);
+            continue;
+        }
         // Get Customer.
         if (!array_key_exists($qbOrder->customer, $qbCustomers)) {
             $qbCustomers[$qbOrder->customer] = $quickbooks->getCustomer($qbOrder->customer);
@@ -225,10 +235,6 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
     }
     print "Send orders to Nexternal from Cache\n";
     foreach ($qbOrders as $qbOrder) {
-        // Skip if the order initiated from Nexternal.
-        if (preg_match('/^N/', $qbOrder->id)) {
-            continue;
-        }
         $qb_customer = $qbCustomers[$qbOrder->customer];
         // If the ID is set for nexternal customer then lets set it, if not then lets enter one
         // If not then lets create the customer and then store that ID in quickbooks for later use
@@ -237,8 +243,10 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
         } else {
             $result = $nexternal->createCustomers(array($qb_customer), $qbOrder);
             if (!empty($result['errors'])) {
-                $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $qbOrder->id, implode(" ", $result['errors']));
-                $log->write(Log::ERROR, end($errors));
+                foreach ($result['errors'] as $errors) {
+                    $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $qbOrder->id, implode(" ", $errors));
+                    $log->write(Log::ERROR, end($errors));
+                }
                 continue;
             }
             if (empty($result['customers'])) {
