@@ -171,7 +171,6 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
             $quickbooks->getSalesReceiptByDate($from, $to),
             $quickbooks->getInvoicesByDate($from, $to)
         );
-        $totalOrders += count($qbOrders);
 
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . QUICKBOOKS_ORDER_CACHE . CACHE_EXT)) {
@@ -181,12 +180,12 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
             while (null !== ($cacheOrders = Util::readCache(QUICKBOOKS_ORDER_CACHE))) {
                 $qbOrders = unserialize($cacheOrders);
                 unset($cacheOrders);
-                $result = _pushQuickbooksToNexternal($qxOrders, $nxCustomers, $nexternal, $quickbooks);
+                $result = _pushQuickbooksToNexternal($qbOrders, $nxCustomers, $nexternal, $quickbooks);
                 $totalOrders += $result['sentOrders'];
                 $errors = array_merge($errors, $result['errors']);
             }
         } else {
-            $result = _pushQuickbooksToNexternal($qxOrders, $nxCustomers, $nexternal, $quickbooks);
+            $result = _pushQuickbooksToNexternal($qbOrders, $nxCustomers, $nexternal, $quickbooks);
             $totalOrders += $result['sentOrders'];
             $errors = array_merge($errors, $result['errors']);
         }
