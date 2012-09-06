@@ -66,7 +66,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
     }
 
     // Send Email
-    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nTotal Orders Sent to QB: %d\n", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), $totalOrders);
+    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nTotal Orders Sent to QB: %d\n\n\nOrder Numbers:\n%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), count($totalOrders), implode("\n\t", $totalOrders));
     if (!empty($errors)) {
         Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", "The following Errors occurred while pushing Orders from Nexternal to Quickbooks.\n\n\n\n" . implode("\n\n", $errors));
     }
@@ -147,7 +147,7 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$qu
  */
 function pushQuickbooksToNexternal($from, $to, $orders=true)
 {
-    $totalOrders    = 0;
+    $totalOrders = array();
     $errors = array();
 
     // Connect to Nexternal.
@@ -176,7 +176,6 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
         if (file_exists(CACHE_DIR . QUICKBOOKS_ORDER_CACHE . CACHE_EXT)) {
             // Save orders to cache and process cache.
             Util::writeCache(QUICKBOOKS_ORDER_CACHE, serialize($qbOrders));
-            $totalOrders = array();
             while (null !== ($cacheOrders = Util::readCache(QUICKBOOKS_ORDER_CACHE))) {
                 $qbOrders = unserialize($cacheOrders);
                 unset($cacheOrders);
@@ -186,17 +185,17 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
             }
         } else {
             $result = _pushQuickbooksToNexternal($qbOrders, $nxCustomers, $nexternal, $quickbooks);
-            $totalOrders = array_merge($totalOrders, $result['sentOrders']);
+            $totalOrders = $result['sentOrders'];
             $errors = array_merge($errors, $result['errors']);
         }
         printf("Total Orders Sent to NX: %d\n", count($totalOrders));
     }
 
     // Send Email
-    $message = sprintf("Total Orders Sent to NX: %d\n\n\nOrder Numbers:\n%s", count($totalOrders), implode("\n\t", $totalOrders));
+    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nTotal Orders Sent to QB: %d\n\n\nOrder Numbers:\n%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), count($totalOrders), implode("\n\t", $totalOrders));
 
     if (!empty($errors)) {
-        Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", "The following Errors occurred while pushing Orders from Quickbooks to Nexternal\n\n\n" . implode("\n", $errors));
+        Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", "The following Errors occurred while pushing Orders from Quickbooks to Nexternal\n\n\n\n" . implode("\n\n", $errors));
     }
     Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox (QB->NX)", $message);
 }
@@ -238,7 +237,7 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
         } else {
             $result = $nexternal->createCustomers(array($qb_customer), $qbOrder);
             if (!empty($result['errors'])) {
-                $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $qbOrder->id, print_r($result['errors'],true));
+                $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $qbOrder->id, implode(" ", $result['errors']));
                 $log->write(Log::ERROR, end($errors));
                 continue;
             }

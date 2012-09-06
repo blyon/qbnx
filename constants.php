@@ -19,5 +19,5 @@ DEFINE('QUICKBOOKS_ORDER_CACHE',    'QuickbooksOrders');
 DEFINE('QUICKBOOKS_CUSTOMER_CACHE', 'QuickbooksCustomers');
 DEFINE('MAIL_UPDATES',              'tbudzins@gmail.com, brandon@lyonaround.com');
 DEFINE('MAIL_EXCEPTIONS',           'tbudzins@gmail.com, brandon@lyonaround.com');
-DEFINE('MAIL_ERRORS',               'tbudzins@gmail.com, brandon@lyonaround.com, denise@toesox.com, jpatterson@toesox.com, italybarry@yahoo.com');
-DEFINE('MAIL_SUCCESS',              'tbudzins@gmail.com, brandon@lyonaround.com, denise@toesox.com');
+DEFINE('MAIL_ERRORS',               'tbudzins@gmail.com, brandon@lyonaround.com, denise@toesox.com, sseibert@toesox.com, jpatterson@toesox.com, italybarry@yahoo.com');
+DEFINE('MAIL_SUCCESS',              'tbudzins@gmail.com, brandon@lyonaround.com, denise@toesox.com, sseibert@toesox.com, jpatterson@toesox.com, italybarry@yahoo.com');
