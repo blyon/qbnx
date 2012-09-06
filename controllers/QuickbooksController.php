@@ -888,6 +888,9 @@ class QuickbooksController
      */
     private function _getValue(&$object, $attribute)
     {
+        if (!is_object($object)) {
+            $this->log->write(Log::ALERT, "Invalid Object specified for Attribute: " . $attribute);
+        }
         if (property_exists($object, $attribute) && is_object($object->$attribute)) {
             return $object->$attribute->getValue;
         }

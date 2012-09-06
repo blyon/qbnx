@@ -789,6 +789,7 @@ class NexternalController
         $c->type        = (string) $customer->CustomerType;
         $c->firstName   = (string) $customer->Address->Name->FirstName;
         $c->lastName    = (string) $customer->Address->Name->LastName;
+        $c->fullName    = trim($c->firstName . " " . $c->lastName);
         $c->company     = (string) $customer->Address->CompanyName;
         return $c;
     }
@@ -889,6 +890,7 @@ class NexternalController
                 $c->email       = (string) $customer->Email;
                 $c->firstName   = (string) $customer->Name->FirstName;
                 $c->lastName    = (string) $customer->Name->LastName;
+                $c->fullName    = trim($c->firstName . " " . $c->lastName);
 
                 $return['customers'][] = $c;
             }
