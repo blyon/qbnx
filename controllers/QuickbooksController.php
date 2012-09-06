@@ -53,7 +53,7 @@ class QuickbooksController
      */
     public function createCustomCustomerField($customer, $dataExtName, $dataExtValue, $table_name)
     {
-        $this->_createCustomFeild($customer, $dataExtName, $dataExtValue, $table_name);
+        return $this->_createCustomField($customer, $dataExtName, $dataExtValue, $table_name);
     }
 
 
@@ -527,8 +527,8 @@ class QuickbooksController
     /**
      * Create a custom feild used to store nexternal ID's
      */
-    private function _createCustomFeild(Customer $customer, $dataExtName, $dataExtValue, $table_name) {
-
+    private function _createCustomField(Customer $customer, $dataExtName, $dataExtValue, $table_name)
+    {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $request = $this->_qb->request->AppendDataExtModRq();
         $request->OwnerID->setValue('0');
@@ -536,8 +536,12 @@ class QuickbooksController
         $request->DataExtValue->setValue($dataExtValue);
         $request->ORListTxn->ListDataExt->ListDataExtType->SetAsString($table_name);
         $request->ORListTxn->ListDataExt->ListObjRef->FullName->setValue($customer->fullName);
-        $resp =  $this->_qb->sendRequest();
+        $response = $this->_qb->sendRequest();
 
+        return (0 != $response->ResponseList->GetAt(0)->StatusCode)
+            ? false
+            : true;
+        }
     }
 
     /**

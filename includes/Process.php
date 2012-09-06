@@ -46,7 +46,6 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
     // Download Orders from Nexternal.
     if ($orders) {
         $nxOrders    = $nexternal->getOrders($from, $to);
-        $totalOrders += count($nxOrders);
         $nxCustomers = array();
 
         // Check for Cache before sending orders to QB.
@@ -54,10 +53,14 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
             // Save orders to cache and process cache.
             Util::writeCache(NEXTERNAL_ORDER_CACHE, serialize($nxOrders));
             while (null !== ($nxOrders = Util::readCache(NEXTERNAL_ORDER_CACHE))) {
-                $errors = array_merge($errors, _pushNexternalToQuickbooks($nxOrders, $totalOrders, $nxCustomers, $nexternal, $quickbooks));
+                $result = _pushNexternalToQuickbooks($nxOrders, $nxCustomers, $nexternal, $quickbooks);
+                $totalOrders += $result['sentOrders'];
+                $errors = array_merge($errors, $result['errors']);
             }
         } else {
-            $errors = array_merge($errors, _pushNexternalToQuickbooks($nxOrders, $totalOrders, $nxCustomers, $nexternal, $quickbooks));
+            $result = _pushNexternalToQuickbooks($nxOrders, $nxCustomers, $nexternal, $quickbooks);
+            $totalOrders += $result['sentOrders'];
+            $errors = array_merge($errors, $result['errors']);
         }
         printf("Total Orders Sent to QB: %d\n", $totalOrders);
     }
@@ -65,9 +68,9 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
     // Send Email
     $message = sprintf("Total Orders Sent to QB: %d\n", $totalOrders);
     if (!empty($errors)) {
-        Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", implode("\n", $errors));
+        Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", "The following Errors occurred while pushing Orders from Nexternal to Quickbooks\n\n\n" . implode("\n", $errors));
     }
-    Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox", $message);
+    Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox (NX->QB)", $message);
 }
 
 
@@ -75,15 +78,14 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
  * Helper function for pushNexternalToQuickbooks to prevent code duplication.
  *
  * @param type $nxOrders
- * @param type $totalOrders
  * @param type $nxCustomers
  * @param type $nexternal
  * @param type $quickbooks
  */
-function _pushNexternalToQuickbooks(&$nxOrders, &$totalOrders, &$nxCustomers, &$nexternal, &$quickbooks) {
-    $log    = Log::getInstance();
-    $errors = array();
-    $totalOrders += count($nxOrders);
+function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$quickbooks) {
+    $log        = Log::getInstance();
+    $errors     = array();
+    $sentOrders = 0;
     // Get Order Customers.
     foreach ($nxOrders as $nxOrder) {
         // Get Customer.
@@ -124,12 +126,13 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$totalOrders, &$nxCustomers, &$
                 $log->write(Log::ERROR, end($errors));
                 continue;
             }
+            $sentOrders++;
         } else {
             printf("Order %d Exists in QB\n", $nxOrder->id);
             continue;
         }
     }
-    return $errors;
+    return array('sentOrders' => $sentOrders, 'errors' => $errors);
 }
 
 
@@ -144,8 +147,6 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$totalOrders, &$nxCustomers, &$
  */
 function pushQuickbooksToNexternal($from, $to, $orders=true)
 {
-    $log            = Log::getInstance();
-    $totalCustomers = 0;
     $totalOrders    = 0;
     $errors = array();
 
@@ -171,7 +172,6 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
             $quickbooks->getInvoicesByDate($from, $to)
         );
         $totalOrders += count($qbOrders);
-        $qbCustomers = array();
 
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . QUICKBOOKS_ORDER_CACHE . CACHE_EXT)) {
@@ -181,89 +181,96 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
             while (null !== ($cacheOrders = Util::readCache(QUICKBOOKS_ORDER_CACHE))) {
                 $qbOrders = unserialize($cacheOrders);
                 unset($cacheOrders);
-                $totalOrders += count($qbOrders);
-                // Get Order Customers.
-                foreach ($qbOrders as $qbOrder) {
-                    // Get Customer.
-                    if (!array_key_exists($qbOrder->customer, $qbCustomers)) {
-                        $qbCustomers[$qbOrder->customer] = $quickbooks->getCustomer($qbOrder->customer);
-                    }
-                }
-                print "Send orders to Nexternal from Cache\n";
-                foreach ($qbOrders as $qbOrder) {
-                    $qb_customer = $qbCustomers[$qbOrder->customer];
-                    // If the ID is set for nexternal customer then lets set it, if not then lets enter one
-                    // If not then lets create the customer and then store that ID in quickbooks for later use
-                    if(!$empty($qb_customer->nexternalId)) {
-                        $customer = $nexternal->getCustomer($qb_customer->nexternalId);
-                    }
-                    if($customer == FALSE || empty($qb_customer->nexternalId)) {
-                        $customer = $nexternal->createCustomers(array($qb_customer),$qbOrder);
-                        $quickbooks->createCustomCustomerField($customer, "NexternalId", $customer->id, 'Customer');
-                        printf("Nexternal customer %d created\n", $customer->id);
-                    }
-                    if($customer == FALSE) {
-                        $created_order = $nexternal->createOrder($qbOrder, $customer);
-                    }
-
-                    if($created_order == FALSE) {
-                        $errors[] = "Could not create customer for Order ".$qbOrder->id;
-                    }
-                }
+                $result = _pushQuickbooksToNexternal($nxOrders, $nxCustomers, $nexternal, $quickbooks);
+                $totalOrders += $result['sentOrders'];
+                $errors = array_merge($errors, $result['errors']);
             }
         } else {
-            foreach ($qbOrders as $qbOrder) {
-                // Get Customer.
-                if (!array_key_exists($qbOrder->customer, $qbCustomers)) {
-                    $qbCustomers[$qbOrder->customer] = $quickbooks->getCustomer($qbOrder->customer);
-                }
-            }
-
-            // Get Order Customers.
-            foreach ($qbOrders as $key => $qbOrder) {
-                // Ignore if Order initiated from Quickbooks.
-                if (preg_match('/^N/', $qbOrder->id)) {
-                    unset($qbOrders[$key]);
-                    continue;
-                }
-            }
-
-            print "Send orders to Nexternal\n";
-            foreach ($qbOrders as $qbOrder) {
-                $qb_customer = $qbCustomers[$qbOrder->customer];
-                // If the ID is set for nexternal customer then lets set it, if not then lets enter one
-                // If not then lets create the customer and then store that ID in quickbooks for later use
-                if(!$empty($qb_customer->nexternalId)) {
-                    $customer = $nexternal->getCustomer($qb_customer->nexternalId);
-                }
-                if($customer == FALSE || empty($qb_customer->nexternalId)) {
-                    $customer = $nexternal->createCustomers(array($qb_customer),$qbOrder);
-                    $quickbooks->createCustomCustomerField($customer, "NexternalId", $customer->id, 'Customer');
-                    printf("Nexternal customer %d created\n", $customer->id);
-                }
-
-                if($customer == FALSE) {
-                    $created_order = $nexternal->createOrder($qbOrder, $customer);
-                }
-
-                if($created_order == FALSE) {
-                   $errors[] = "Could not create customer for Order ".$qbOrder->id;
-                }
-
-            }
+            $result = _pushQuickbooksToNexternal($nxOrders, $nxCustomers, $nexternal, $quickbooks);
+            $totalOrders += $result['sentOrders'];
+            $errors = array_merge($errors, $result['errors']);
         }
-        printf("Total Orders Sent to Nexternal: %d\n", $totalOrders);
+        printf("Total Orders Sent to NX: %d\n", $totalOrders);
     }
 
-    $to      = 'tbudzins@gmail.com';
-    $subject = 'Order report for toesox';
-    $headers = 'From: admin@toesox.com' . "\r\n" .
-        'Reply-To: admin@toesox.com' . "\r\n" .
-        'X-Mailer: PHP/' . phpversion();
+    // Send Email
+    $message = sprintf("Total Orders Sent to NX: %d\n", $totalOrders);
+    if (!empty($errors)) {
+        Util::sendMail(MAIL_ERRORS, "Order ERROR Report for ToeSox", "The following Errors occurred while pushing Orders from Quickbooks to Nexternal\n\n\n" . implode("\n", $errors));
+    }
+    Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox (QB->NX)", $message);
+}
 
-    $message = sprintf("Total Orders Sent to Nexternal: %d\n", $totalOrders);
-    if(!empty($errors))
-        $message .= implode("\n",$errors);
 
-    mail($to, $subject, $message, $headers);
+/**
+ * Helper function for pushQuickbooksToNexternal to prevent code duplication.
+ *
+ * @param type $qbOrders
+ * @param type $qbCustomers
+ * @param type $nexternal
+ * @param type $quickbooks
+ * @return type
+ */
+function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$quickbooks) {
+    $log        = Log::getInstance();
+    $errors     = array();
+    $sentOrders = array();
+    $qbCustomers= array();
+
+    // Get Order Customers.
+    foreach ($qbOrders as $qbOrder) {
+        // Get Customer.
+        if (!array_key_exists($qbOrder->customer, $qbCustomers)) {
+            $qbCustomers[$qbOrder->customer] = $quickbooks->getCustomer($qbOrder->customer);
+        }
+    }
+    print "Send orders to Nexternal from Cache\n";
+    foreach ($qbOrders as $qbOrder) {
+        // Skip if the order initiated from Nexternal.
+        if (preg_match('/^N/', $qbOrder->id)) {
+            unset($qbOrders[$key]);
+            continue;
+        }
+        $qb_customer = $qbCustomers[$qbOrder->customer];
+        // If the ID is set for nexternal customer then lets set it, if not then lets enter one
+        // If not then lets create the customer and then store that ID in quickbooks for later use
+        if (!empty($qb_customer->nexternalId)) {
+            $customer = $nexternal->getCustomer($qb_customer->nexternalId);
+        } else {
+            $result = $nexternal->createCustomers(array($qb_customer), $qbOrder);
+            if (!empty($result['errors'])) {
+                $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $nxOrder->id, print_r($result['errors'],true));
+                $log->write(Log::ERROR, end($errors));
+                continue;
+            }
+            if (empty($result['customers'])) {
+                $errors[] = sprintf("An Unknown Error occurred when creating Customer[%s] for Order[%s] - %s",
+                    $qb_customer->type,
+                    $nxOrder->id,
+                    print_r($result['errors'], true)
+                );
+                $log->write(Log::ERROR, end($errors));
+                continue;
+            }
+            $customer = array_pop($result['customers']);
+            // Add NX ID to QB Customer.
+            if (false == $quickbooks->createCustomCustomerField($customer, "NexternalId", $customer->id, 'Customer')) {
+                $errors[] = sprintf("Failed to add Nexternal ID[%s] to Quickbooks Customer[%s].", $customer->id, $qb_customer->id);
+                $log->write(Log::ERROR, end($errors));
+                continue;
+            } else {
+                $log->write(Log::INFO, sprintf("Nexternal Customer[%s] pushed to Quickbooks.", $customer->id));
+            }
+
+            // Create Order.
+            if (false !== ($oid = $neternal->createOrder($qbOrder, $customer))) {
+                $sentOrders[] = $oid;
+            } else {
+                $errors[] = sprintf("Failed to migrate Order[%s] to Nexternal.", $qbOrder->id);
+                $log->write($log::ERROR, end($errors));
+                continue;
+            }
+        }
+    }
+    return array('sentOrders' => $sentOrders, 'errors' => $errors);
 }

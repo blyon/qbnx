@@ -77,12 +77,10 @@ class NexternalController
         $response = $this->_processCustomerQueryResponse(
             $this->_customerQueryById($customer_id)
         );
-        if(isset($response['customers'][0])) {
-            return $response['customers'][0];
-        }
-        else {
-            return FALSE;
-        }
+        return (!empty($response['customers'])
+            ? array_shift($response['customers'])
+            : false
+        );
     }
 
 
@@ -223,6 +221,8 @@ class NexternalController
      */
     public function createCustomers($customers, Order $order)
     {
+        $return = array('errors' => 0, 'customers' => array());
+
         // Get the arraykey of the last customer.
         $lastCustomer = end(array_keys($customers));
 
@@ -233,7 +233,7 @@ class NexternalController
                 $this->log->write(Log::CRIT, "One or more customers passed to ".__FUNCTION__." is not an instance of Customer");
             }
             // Add Customer to Queue.
-            $this->_customerCreate($customer,$order);
+            $this->_customerCreate($customer, $order);
 
             // Send XML to Nexternal if we have 15 customers in the queue, or if
             // this is the last customer in the array.
@@ -244,22 +244,21 @@ class NexternalController
             ) {
                 $response = $this->_processCustomerCreateResponse($this->_nx->sendDom('customerupdate.rest'));
                 if (!empty($response['errors'])) {
-                    return false;
-                }
-                else{
-                    print_r($response['customers'][0]);
+                    $return['errors'][$cid] = $response['errors'];
+                    continue;
+                } else {
                     $c = new Customer;
                     $c->id          = (string) $response['customers'][0]->id;
                     $c->email       = (string) $response['customers'][0]->email;
                     $c->type        = (string) $response['customers'][0]->type;
                     $c->firstName   = (string) $response['customers'][0]->FirstName;
                     $c->lastName    = (string) $response['customers'][0]->LastName;
-                    return $c;
+                    $return['customers'][$cid] = $c;
                 }
             }
         }
 
-        return true;
+        return $return;
     }
 
 
