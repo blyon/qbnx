@@ -181,12 +181,12 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
             while (null !== ($cacheOrders = Util::readCache(QUICKBOOKS_ORDER_CACHE))) {
                 $qbOrders = unserialize($cacheOrders);
                 unset($cacheOrders);
-                $result = _pushQuickbooksToNexternal($nxOrders, $nxCustomers, $nexternal, $quickbooks);
+                $result = _pushQuickbooksToNexternal($qxOrders, $nxCustomers, $nexternal, $quickbooks);
                 $totalOrders += $result['sentOrders'];
                 $errors = array_merge($errors, $result['errors']);
             }
         } else {
-            $result = _pushQuickbooksToNexternal($nxOrders, $nxCustomers, $nexternal, $quickbooks);
+            $result = _pushQuickbooksToNexternal($qxOrders, $nxCustomers, $nexternal, $quickbooks);
             $totalOrders += $result['sentOrders'];
             $errors = array_merge($errors, $result['errors']);
         }
