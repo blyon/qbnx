@@ -54,15 +54,15 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
             Util::writeCache(NEXTERNAL_ORDER_CACHE, serialize($nxOrders));
             while (null !== ($nxOrders = Util::readCache(NEXTERNAL_ORDER_CACHE))) {
                 $result = _pushNexternalToQuickbooks($nxOrders, $nxCustomers, $nexternal, $quickbooks);
-                $totalOrders += $result['sentOrders'];
+                $totalOrders = array_merge($totalOrders, $result['sentOrders']);
                 $errors = array_merge($errors, $result['errors']);
             }
         } else {
             $result = _pushNexternalToQuickbooks($nxOrders, $nxCustomers, $nexternal, $quickbooks);
-            $totalOrders += $result['sentOrders'];
+            $totalOrders = array_merge($totalOrders, $result['sentOrders']);
             $errors = array_merge($errors, $result['errors']);
         }
-        printf("Total Orders Sent to QB: %d\n", $totalOrders);
+        printf("Total Orders Sent to QB: %d\n", count($totalOrders));
     }
 
     // Send Email
@@ -85,7 +85,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
 function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$quickbooks) {
     $log        = Log::getInstance();
     $errors     = array();
-    $sentOrders = 0;
+    $sentOrders = array();
     // Get Order Customers.
     foreach ($nxOrders as $nxOrder) {
         // Get Customer.
@@ -121,12 +121,12 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$qu
                     continue;
                 }
             }
-            if (!$quickbooks->addSalesReceipt($nxOrder, $customer)) {
+            if (!($salesReceipt = $quickbooks->addSalesReceipt($nxOrder, $customer))) {
                 $errors[] = sprintf("Could not create Order[%s] - %s", $nxOrder->id, $quickbooks->last_error);
                 $log->write(Log::ERROR, end($errors));
                 continue;
             }
-            $sentOrders++;
+            $sentOrders[] = $salesReceipt->id;
         } else {
             printf("Order %d Exists in QB\n", $nxOrder->id);
             continue;
