@@ -820,6 +820,18 @@ class NexternalController
             }
         }
 
+        // Make sure the billing address isn't missing any info.
+        $baErrors = array();
+        foreach ($order->bilingAddress as $k => $v) {
+            if (empty($v)) {
+                $baErrors[$k] = $v;
+            }
+        }
+        if (!empty($baErrors)) {
+            Util::sendMail(MAIL_ERRORS, "Unable to Create Nexternal Customer", "The following Billing Address fields are missing\n\n". implode("\n", array_keys($baErrors)));
+            return false;
+        }
+
         // Add Customer to DOM.
         $nxCust = $this->_nx->dom->addChild('Customer');
         $nxCust->addAttribute('Mode', $mode);
@@ -852,9 +864,7 @@ class NexternalController
         } else {
             $nxCust->Address->addChild('CountryCode', $cCode);
         }
-        if (!empty($order->billingAddress['phone'])) {
-            $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
-        }
+        $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
         return true;
     }
 
