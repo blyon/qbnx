@@ -834,16 +834,18 @@ class NexternalController
         $nxCust->Address->Name->addChild('FirstName', $customer->firstName);
         $nxCust->Address->Name->addChild('LastName', $customer->lastName);
         $nxCust->Address->addChild('StreetAddress1', $order->billingAddress['address']);
-        if(!empty($order->billingAddress['address2'])) {
+        if (!empty($order->billingAddress['address2'])) {
             $nxCust->Address->addChild('StreetAddress2', $order->billingAddress['address2']);
         }
-            $nxCust->Address->addChild('City', $order->billingAddress['city']);
-            $nxCust->Address->addChild('StateProvCode', $order->billingAddress['state']);
-            $nxCust->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
-        if($order->billingAddress['country'] == 'USA') {
+        $nxCust->Address->addChild('City', $order->billingAddress['city']);
+        $nxCust->Address->addChild('StateProvCode', $order->billingAddress['state']);
+        $nxCust->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
+        // @TODO: Refactor... country code is the wrong format for nexternal!!!
+        /*if($order->billingAddress['country'] == 'USA') {
             $order->billingAddress['country'] = 'US';
-        }
-        $nxCust->Address->addChild('CountryCode', $order->billingAddress['country']);
+        }*/
+
+        $nxCust->Address->addChild('CountryCode', strtoupper($order->billingAddress['country']));
         $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
         return true;
     }
