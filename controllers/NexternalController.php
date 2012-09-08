@@ -11,6 +11,7 @@
 // Include necessary Models.
 require_once dirname(__FILE__) . '/../models/Log.php';
 require_once dirname(__FILE__) . '/../models/Nexternal.php';
+require_once dirname(__FILE__) . '/../includes/Location.php';
 
 
 class NexternalController
