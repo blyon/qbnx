@@ -243,10 +243,8 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
         } else {
             $result = $nexternal->createCustomers(array($qb_customer), $qbOrder);
             if (!empty($result['errors'])) {
-                foreach ($result['errors'] as $errors) {
-                    $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $qbOrder->id, implode(" ", $errors));
-                    $log->write(Log::ERROR, end($errors));
-                }
+                $errors[] = sprintf("Could not create Customer[%s] for Order[%s] - %s", $qb_customer->type, $qbOrder->id, implode(" ", $result['errors']));
+                $log->write(Log::ERROR, end($errors));
                 continue;
             }
             if (empty($result['customers'])) {

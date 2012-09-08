@@ -360,7 +360,7 @@ class QuickbooksController
                     'state'     => $this->_getValue($d->BillAddress,'State'),
                     'zip'       => $this->_getValue($d->BillAddress,'PostalCode'),
                     'country'   => $this->_getValue($d->BillAddress,'Country'),
-                    'phone'     => $this->_getValue($d->BillAddress,'Phone'),
+                    'phone'     => $this->_getValue($d->BillAddress,'Note'),
                 );
                 $o->shippingAddress = array(
                     'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
@@ -369,7 +369,7 @@ class QuickbooksController
                     'state'     => $this->_getValue($d->ShipAddress,'State'),
                     'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
                     'country'   => $this->_getValue($d->ShipAddress,'Country'),
-                    'phone'     => $this->_getValue($d->ShipAddress,'Phone'),
+                    'phone'     => $this->_getValue($d->ShipAddress,'Note'),
                 );
                 $o->products        = array();
                 $o->discounts       = array();
@@ -490,7 +490,7 @@ class QuickbooksController
                     'state'     => $this->_getValue($d->BillAddress,'State'),
                     'zip'       => $this->_getValue($d->BillAddress,'PostalCode'),
                     'country'   => $this->_getValue($d->BillAddress,'Country'),
-                    'phone'     => $this->_getValue($d->BillAddress,'Phone'),
+                    'phone'     => $this->_getValue($d->BillAddress,'Note'),
                 );
                 $o->shippingAddress = array(
                     'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
@@ -499,7 +499,7 @@ class QuickbooksController
                     'state'     => $this->_getValue($d->ShipAddress,'State'),
                     'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
                     'country'   => $this->_getValue($d->ShipAddress,'Country'),
-                    'phone'     => $this->_getValue($d->ShipAddress,'Phone'),
+                    'phone'     => $this->_getValue($d->ShipAddress,'Note'),
                 );
                 $o->products        = array();
                 $o->discounts       = array();
@@ -617,7 +617,7 @@ class QuickbooksController
         $request->LastName->setValue                    ($customer->lastName);
         $request->Email->setValue                       ($customer->email);
         if(!empty($customer->phone)) {
-            $request->Phone->setValue                       ($customer->phone);
+            $request->Phone->setValue                   ($customer->phone);
         }
 
         $request->BillAddress->Addr1->setValue          ($order->billingAddress['address']);
@@ -626,7 +626,7 @@ class QuickbooksController
         $request->BillAddress->State->setValue          ($order->billingAddress['state']);
         $request->BillAddress->PostalCode->setValue     ($order->billingAddress['zip']);
         $request->BillAddress->Country->setValue        ($order->billingAddress['country']);
-        $request->BillAddress->Phone->setValue           ($order->billingAddress['phone']);
+        $request->BillAddress->Note->setValue           ($order->billingAddress['phone']);
 
         $request->ShipAddress->Addr1->setValue          ($order->shippingAddress['address']);
         $request->ShipAddress->Addr2->setValue          ($order->shippingAddress['address2']);
@@ -634,7 +634,7 @@ class QuickbooksController
         $request->ShipAddress->State->setValue          ($order->shippingAddress['state']);
         $request->ShipAddress->PostalCode->setValue     ($order->shippingAddress['zip']);
         $request->ShipAddress->Country->setValue        ($order->shippingAddress['country']);
-        $request->ShipAddress->Phone->setValue           ($order->shippingAddress['phone']);
+        $request->ShipAddress->Note->setValue           ($order->shippingAddress['phone']);
 
         // Credit Card.
         if ($order->paymentMethod['type'] == "Credit Card") {
@@ -700,7 +700,7 @@ class QuickbooksController
         $request->BillAddress->PostalCode->setValue(      $order->billingAddress['zip']);
         $request->BillAddress->Country->setValue(         $order->billingAddress['country']);
         if (isset($order->billingAddress['phone'])) {
-            $request->BillAddress->Phone->setValue(        $order->billingAddress['phone']);
+            $request->BillAddress->Note->setValue(        $order->billingAddress['phone']);
         }
 
         // Shipping Address.
@@ -712,7 +712,7 @@ class QuickbooksController
             $request->ShipAddress->PostalCode->setValue(      $order->shippingAddress['zip']);
             $request->ShipAddress->Country->setValue(         $order->shippingAddress['country']);
             if (isset($order->shippingAddress['phone'])) {
-                $request->ShipAddress->Phone->setValue(        $order->shippingAddress['phone']);
+                $request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
             }
         }
 
