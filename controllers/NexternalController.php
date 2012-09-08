@@ -821,7 +821,7 @@ class NexternalController
         }
 
         // Add Customer to DOM.
-        $nxCust =  $this->_nx->dom->addChild('Customer');
+        $nxCust = $this->_nx->dom->addChild('Customer');
         $nxCust->addAttribute('Mode', $mode);
         $nxCust->addAttribute('MatchingField', 'Email');
         $nxCust->addChild('Name');
@@ -852,7 +852,9 @@ class NexternalController
         } else {
             $nxCust->Address->addChild('CountryCode', $cCode);
         }
-        $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
+        if (!empty($order->billingAddress['phone'])) {
+            $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
+        }
         return true;
     }
 
