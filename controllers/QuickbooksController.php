@@ -252,14 +252,8 @@ class QuickbooksController
             return false;
         }
 
-        $details = $response->ResponseList->GetAt(0)->Detail;
-        if (!$details->Count) {
-            $this->log->write(Log::ERROR, "No response data for Customer Create.");
-            return false;
-        } elseif ($details->Count > 1) {
-            $this->log->write(Log::WARN, sprintf("Customer Create Response returned [%d] Records.", $details->Count));
-        }
-        $d = $details->GetAt(0);
+        // Detail is not an array, only 1 object is ever returned.
+        $d = $response->ResponseList->GetAt(0)->Detail;
 
         $c = new Customer;
         $c->company        = $this->_getValue($d,'CompanyName');
@@ -353,6 +347,11 @@ class QuickbooksController
                 $o->paymentMethod;
                 if (isset($d->CustomerRef)) {
                     $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
+                }
+                if (!isset($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
+                    Util::sendMail(MAIL_ERRORS, "Invoice Missing Billing Address",
+                        sprintf("Invoice ID: %s\n", $o->id));
+                    continue;
                 }
                 $o->billingAddress  = array(
                     'address'   => $this->_getValue($d->BillAddress,'Addr1'),
@@ -478,6 +477,11 @@ class QuickbooksController
                 $o->paymentMethod;
                 if (isset($d->CustomerRef)) {
                     $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
+                }
+                if (!isset($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
+                    Util::sendMail(MAIL_ERRORS, "Sales Receipt Missing Billing Address",
+                        sprintf("Invoice ID: %s\n", $o->id));
+                    continue;
                 }
                 $o->billingAddress  = array(
                     'address'   => $this->_getValue($d->BillAddress,'Addr1'),
@@ -784,14 +788,8 @@ class QuickbooksController
             return false;
         }
 
-        $details = &$response->ResponseList->GetAt(0)->Detail;
-        if (!$details->Count) {
-            $this->log->write(Log::ERROR, "No response data for Customer Create.");
-            return false;
-        } elseif ($details->Count > 1) {
-            $this->log->write(Log::WARN, sprintf("Sales Receipt Add Response returned [%d] Records.", $details->Count));
-        }
-        $d = $details->GetAt(0);
+        // Detail is not an array, only 1 object is ever returned.
+        $d = &$response->ResponseList->GetAt(0)->Detail;
         $o = new Order;
         $o->qbTxn           = $this->_getValue($d,'TxnID');
         $o->id              = $this->_getValue($d,'RefNumber');
