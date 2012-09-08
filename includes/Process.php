@@ -24,7 +24,7 @@ require_once dirname(__FILE__) . '/../controllers/QuickbooksController.php';
  */
 function pushNexternalToQuickbooks($from, $to, $orders=true)
 {
-    $totalOrders = 0;
+    $totalOrders = array();
     $errors = array();
 
     // Connect to Nexternal.

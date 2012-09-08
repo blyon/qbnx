@@ -840,12 +840,17 @@ class NexternalController
         $nxCust->Address->addChild('City', $order->billingAddress['city']);
         $nxCust->Address->addChild('StateProvCode', $order->billingAddress['state']);
         $nxCust->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
-        // @TODO: Refactor... country code is the wrong format for nexternal!!!
-        /*if($order->billingAddress['country'] == 'USA') {
-            $order->billingAddress['country'] = 'US';
-        }*/
 
-        $nxCust->Address->addChild('CountryCode', strtoupper($order->billingAddress['country']));
+        if ($order->billingAddress['country'] == 'USA') {
+            $order->billingAddress['country'] = 'United States';
+        }
+
+        $cCode = Location::getCountryCode($order->billingAddress['country']);
+        if (false === $cCode) {
+            Util::sendMail(MAIL_ERRORS, "Country Code Lookup Failed", "Could not find Country Code for Country: " . $order->billingAddress['country']);
+        } else {
+            $nxCust->Address->addChild('CountryCode', $cCode);
+        }
         $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
         return true;
     }

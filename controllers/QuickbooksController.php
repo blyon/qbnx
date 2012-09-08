@@ -348,7 +348,7 @@ class QuickbooksController
                 if (isset($d->CustomerRef)) {
                     $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
                 }
-                if (!isset($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
+                if (!isset($d->BillAddress) || !is_object($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
                     Util::sendMail(MAIL_ERRORS, "Invoice Missing Billing Address",
                         sprintf("Invoice ID: %s\n", $o->id));
                     continue;
@@ -478,9 +478,9 @@ class QuickbooksController
                 if (isset($d->CustomerRef)) {
                     $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
                 }
-                if (!isset($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
+                if (!isset($d->BillAddress) || !is_object($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
                     Util::sendMail(MAIL_ERRORS, "Sales Receipt Missing Billing Address",
-                        sprintf("Invoice ID: %s\n", $o->id));
+                        sprintf("Sales Receipt ID: %s\n", $o->id));
                     continue;
                 }
                 $o->billingAddress  = array(
@@ -901,8 +901,7 @@ class QuickbooksController
     {
         if (!is_object($object)) {
             $this->log->write(Log::WARN, "Invalid Object specified for Attribute: " . $attribute);
-        }
-        if (property_exists($object, $attribute) && is_object($object->$attribute)) {
+        } elseif (property_exists($object, $attribute) && is_object($object->$attribute)) {
             return $object->$attribute->getValue;
         }
         return '';
