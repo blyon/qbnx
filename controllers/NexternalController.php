@@ -628,23 +628,26 @@ class NexternalController
                 }
 
                 // Add Discount(s).
-                if (isset($order->Discount)) {
-                    foreach ($order->Discount as $discount) {
-                        $o->discounts[] = array(
-                            'type'  => (string) $discount->Type,
-                            'name'  => (string) $discount->Name,
-                            'value' => (string) $discount->Value,
-                        );
-                    }
-                }
-
-                // Add Gift Certificate(s).
-                if (isset($order->GiftCert)) {
-                    foreach ($order->GiftCert as $gc) {
-                        $o->giftCerts[] = array(
-                            'code'   => (string) $gc->GiftCertCode,
-                            'amount' => (string) $gc->GiftCertAmount,
-                        );
+                if (isset($order->Discounts)) {
+                    foreach ($order->Discounts->children() as $discount) {
+                        switch ($discount->getName()) {
+                            case 'CouponDiscount':
+                                $o->discounts[] = array(
+                                    'type' => (string) $discount->getName(),
+                                    'name' => (string) $discount->attributes()->Code,
+                                    'value'=> (string) $discount,
+                                );
+                                break;
+                            case 'GiftCertDiscount':
+                                $o->giftCerts[] = array(
+                                    'code'  => (string) $discount->attributes()->Code,
+                                    'amount'=> (string) $discount,
+                                );
+                                break;
+                            default:
+                                Util::sendMail(MAIL_ERRORS, "Order Skipped: Unsupported Discount Type", sprintf("Order: %s\nDiscount Type: %s\nDiscount Attributes: %s\n", $o->id, $discount->getName(), print_r($discount->attributes(), true)));
+                                continue;
+                        }
                     }
                 }
 
