@@ -233,7 +233,11 @@ class NexternalController
                 $this->log->write(Log::CRIT, "One or more customers passed to ".__FUNCTION__." is not an instance of Customer");
             }
             // Add Customer to Queue.
-            $this->_customerCreate($customer, $order);
+            if (false === $this->_customerCreate($customer, $order)) {
+                $this->log->write(Log::ERROR, "Unable to create Customer for Order: " . $order->id);
+                $return['errors'][] = "Unable to create Customer";
+                return $return;
+            }
 
             // Send XML to Nexternal if we have 15 customers in the queue, or if
             // this is the last customer in the array.
@@ -807,10 +811,6 @@ class NexternalController
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
-        if ($this->_nx->dom->getName() != 'CustomerUpdateRequest') {
-            // Initialize DOM {@see _addCredentials}.
-            $this->_nx->initDom('<CustomerUpdateRequest/>');
-        }
         if(count($this->_nx->dom->children('Customer') != 0)) {
             $order_count = 1 + (int)count($this->_nx->dom->children('Customer'));
             // Make sure we won't go over the maximum number of customers per request.
@@ -822,14 +822,19 @@ class NexternalController
 
         // Make sure the billing address isn't missing any info.
         $baErrors = array();
-        foreach ($order->bilingAddress as $k => $v) {
+        foreach ($order->billingAddress as $k => $v) {
             if (empty($v)) {
                 $baErrors[$k] = $v;
             }
         }
         if (!empty($baErrors)) {
-            Util::sendMail(MAIL_ERRORS, "Unable to Create Nexternal Customer", "The following Billing Address fields are missing\n\n". implode("\n", array_keys($baErrors)));
+            Util::sendMail(MAIL_ERRORS, "Unable to Create Nexternal Customer", "Order: ".$order->id."\nThe following Billing Address fields are missing\n\n". implode("\n", array_keys($baErrors)));
             return false;
+        }
+
+        if ($this->_nx->dom->getName() != 'CustomerUpdateRequest') {
+            // Initialize DOM {@see _addCredentials}.
+            $this->_nx->initDom('<CustomerUpdateRequest/>');
         }
 
         // Add Customer to DOM.
