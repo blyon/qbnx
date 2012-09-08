@@ -195,9 +195,6 @@ class NexternalController
             $orders[] = $order;
         }
 
-        // set additional pages flag.
-        $morePages = $response['morePages'];
-
         // reset response.
         unset($response);
 
@@ -290,7 +287,7 @@ class NexternalController
             if (Nexternal::ORDERUPDATE_MAX == $ordersInQueue
                 || $cid == $lastOrder
             ) {
-                $response = $this->_processOrderCreateResponse($this->_nx->sendDom('customerupdate.rest'));
+                $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest'));
                 if (!empty($response['errors'])) {
                     return false;
                 }
@@ -317,7 +314,7 @@ class NexternalController
         $this->_orderCreate($order,$customer);
 
         // Send Order to Nexternal.
-        $response = $this->_processOrderCreateResponse($this->_nx->sendDom('customerupdate.rest'));
+        $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest'));
         if (!empty($response['errors'])) {
             return false;
         }
