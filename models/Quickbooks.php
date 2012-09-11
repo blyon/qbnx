@@ -11,7 +11,6 @@ class Quickbooks
     private $_qbfcVersion;
     private $_docroot;
     private $_appName;
-    private $_ticket;
     public  $request;
     public  $log;
 
@@ -46,6 +45,7 @@ class Quickbooks
 
         $this->_docroot         = preg_replace("@/$@", "", dirname(dirname(__FILE__))) . "/";
         $config                 = Util::config();
+        $this->_file            = $config['Quickbooks']['file'];
         $this->_appName         = $config['Quickbooks']['app'];
         $this->_qbfcVersion     = $config['Quickbooks']['version'];
         $this->log              = Log::getInstance();
@@ -77,9 +77,9 @@ class Quickbooks
         // Create Session Manager.
         $this->_sm = new COM("QBFC" . $this->_qbfcVersion . ".QBSessionManager");
         // Open Connection.
-        $this->_sm->OpenConnection("", $this->_appName);
+        $this->_sm->OpenConnection2("", $this->_appName);
         // Begin Session (ignore multi/single user modes)
-        $this->_sm->BeginSession("", 2);
+        $this->_sm->BeginSession($this->_file, 2);
         // Set Message Request.
         $this->request = $this->_sm->CreateMsgSetRequest("US", $this->_qbfcVersion, 0);
         // Allow "continue on error"
