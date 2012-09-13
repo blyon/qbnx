@@ -76,8 +76,8 @@ class Quickbooks
 
         // Create Session Manager.
         $this->_sm = new COM("QBFC" . $this->_qbfcVersion . ".QBSessionManager");
-        // Open Connection.
-        $this->_sm->OpenConnection2("", $this->_appName);
+        // Open (ctLocalQBD) Connection.
+        $this->_sm->OpenConnection2("", $this->_appName, 1);
         // Begin Session (ignore multi/single user modes)
         $this->_sm->BeginSession($this->_file, 2);
         // Set Message Request.
