@@ -119,7 +119,7 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$qu
             if (!$customer) {
                 if (!($customer = $quickbooks->createCustomer($nx_customer,$nxOrder))) {
                     $msg = "[ORDER ".$nxOrder->id."] Could not create customer [".$nx_customer->type."] for Order. " . $quickbooks_last_error;
-                    $log->mail($msg, Log::CATEGORY_NX_CUSTOMER);
+                    $log->mail($msg, Log::CATEGORY_QB_CUSTOMER);
                     $log->write(Log::ERROR, $msg);
                 $errors++;
                     continue;
@@ -127,7 +127,7 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$qu
             }
             if (!($salesReceipt = $quickbooks->addSalesReceipt($nxOrder, $customer))) {
                 $msg = sprintf("[ORDER %s] Could not create Order: %s", $nxOrder->id, $quickbooks->last_error);
-                $log->mail($msg, Log::CATEGORY_NX_CUSTOMER);
+                $log->mail($msg, Log::CATEGORY_QB_CUSTOMER);
                 $log->write(Log::ERROR, $msg);
                 $errors++;
                 continue;
