@@ -248,7 +248,7 @@ class NexternalController
             ) {
                 $response = $this->_processCustomerCreateResponse($this->_nx->sendDom('customerupdate.rest'));
                 if (!empty($response['errors'])) {
-                    $return['errors'][$cid] = $response['errors'];
+                    $return['errors'][$cid] = implode(", ", $response['errors']);
                     continue;
                 } else {
                     if (empty($response['customers'])) {
