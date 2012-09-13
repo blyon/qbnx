@@ -614,7 +614,7 @@ class QuickbooksController
         $request->CustomerTypeRef->FullName->setValue   ($customer->type);
         $request->LastName->setValue                    ($customer->lastName);
         $request->Email->setValue                       ($customer->email);
-        if(!empty($customer->phone)) {
+        if (!empty($customer->phone)) {
             $request->Phone->setValue                   ($customer->phone);
         }
 
@@ -637,6 +637,7 @@ class QuickbooksController
         // Credit Card.
         if ($order->paymentMethod['type'] == "Credit Card") {
             $this->log->write(Log::WARN, "Creditcard is Masked");
+            // @TODO: May need to handle masked CCs differently.
              //cant set because CC is masked
              //$request->CreditCardInfo->CreditCardNumber->SetAsString($order->paymentMethod['cardNumber']);
              //$date_parts = explode("/",$order->paymentMethod['cardNumber']);
@@ -737,7 +738,7 @@ class QuickbooksController
         foreach ($order->discounts as $discount) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
             $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   'DISCOUNT');
-            $lineItem->SalesReceiptLineAdd->Desc->setValue(                $discount['type'].$discount['name']);
+            $lineItem->SalesReceiptLineAdd->Desc->setValue(                implode(" ", array($discount['type'],$discount['name'])));
             $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount['value']);
         }
 
@@ -752,6 +753,7 @@ class QuickbooksController
 
         if ($order->paymentMethod['type'] == "Credit Card") {
             $this->log->write(Log::WARN, "Creditcard is Masked");
+            // @TODO: May need to handle masked CCs differently.
             //card is masked cant add
             //print_r($order->paymentMethod);
             //exit;

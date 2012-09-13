@@ -137,7 +137,7 @@ class Log
         $body = $prefix;
         foreach ($this->_mailMessages as $category => $messages) {
             switch ($category) {
-                case self::CATEGORY_FAIL:
+                case self::CATEGORY_FATAL:
                     $body .= "\n--- FATAL ERRORS ---\n";
                     break;
                 case self::CATEGORY_QB_CUSTOMER:
