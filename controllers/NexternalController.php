@@ -252,7 +252,7 @@ class NexternalController
                     continue;
                 } else {
                     if (empty($response['customers'])) {
-                        $return['errors'][$cid] = array("No Customer Found");
+                        $return['errors'][$cid] = "No Customer Found";
                         continue;
                     }
                     $return['customers'][$cid] = current($response['customers']);
@@ -345,6 +345,7 @@ class NexternalController
         // Check for Error.
         if (false == $responseDom) {
             $this->log->write(Log::ERROR, "Authentication Failed");
+            $this->log->mail("Nexternal Authentication Failed!", Log::CATEGORY_FATAL);
             throw new Exception("Authentication Failed");
         }
 
@@ -410,6 +411,7 @@ class NexternalController
         // Check for Error.
         if (false == $responseDom) {
             $this->log->write(Log::ERROR, "Authentication Verification Failed");
+            $this->log->mail("Nexternal Authentication Verification Failed!", Log::CATEGORY_FATAL);
             throw new Exception("Authentication Verification Failed");
         }
 
@@ -486,6 +488,7 @@ class NexternalController
                 $this->_nx->dom->addChild('BillingStatus', $billingStatus);
             } else {
                 $this->log->write(Log::CRIT, "Unable to send Order Query, invalid Billing Status: " . $billingStatus);
+                $this->log->mail("Unable to send Order Query, invalid Billing Status: " . $billingStatus, Log::CATEGORY_FATAL);
                 throw new Exception("Unable to send Order Query, invalid Billing Status: " . $billingStatus);
             }
         }
@@ -647,7 +650,7 @@ class NexternalController
                                 );
                                 break;
                             default:
-                                Util::sendMail(MAIL_ERRORS, "Order Skipped: Unsupported Discount Type", sprintf("Order: %s\nDiscount Type: %s\nDiscount Attributes: %s\n", $o->id, $discount->getName(), print_r($discount->attributes(), true)));
+                                $this->log->mail("[ORDER ".$o->id."] Ignored because Discount Type for Discount [".$discount->getName()."] was not recognized.", Log::CATEGORY_NX_ORDER);
                                 continue;
                         }
                     }
@@ -828,7 +831,7 @@ class NexternalController
             }
         }
         if (!empty($baErrors)) {
-            Util::sendMail(MAIL_ERRORS, "Unable to Create Nexternal Customer", "Order: ".$order->id."\nThe following Billing Address fields are missing\n\n". implode("\n", array_keys($baErrors)));
+            $this->log->mail("[ORDER ".$order->id."] Failed to create Nexternal Customer because the following fields were missing: [".implode(", ", array_keys($baErrors))."]", Log::CATEGORY_NX_ORDER);
             return false;
         }
 
@@ -865,7 +868,7 @@ class NexternalController
 
         $cCode = Location::getCountryCode($order->billingAddress['country']);
         if (false === $cCode) {
-            Util::sendMail(MAIL_ERRORS, "Country Code Lookup Failed", "Could not find Country Code for Country: " . $order->billingAddress['country']);
+            $this->log->mail("[ORDER ".$order->id."] Failed to create Nexternal Customer because the Country code for Country [".$order->billingAddress['country']."] could not be found.", Log::CATEGORY_NX_ORDER);
         } else {
             $nxCust->Address->addChild('CountryCode', $cCode);
         }

@@ -349,8 +349,7 @@ class QuickbooksController
                     $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
                 }
                 if (!isset($d->BillAddress) || !is_object($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
-                    Util::sendMail(MAIL_ERRORS, "Invoice Missing Billing Address",
-                        sprintf("Invoice ID: %s\n", $o->id));
+                    $this->log->mail("[INVOICE ".$o->id."] Ignored because Billing Address is missing.", Log::CATEGORY_QB_ORDER);
                     continue;
                 }
                 $o->billingAddress  = array(
@@ -479,8 +478,7 @@ class QuickbooksController
                     $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
                 }
                 if (!isset($d->BillAddress) || !is_object($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
-                    Util::sendMail(MAIL_ERRORS, "Sales Receipt Missing Billing Address",
-                        sprintf("Sales Receipt ID: %s\n", $o->id));
+                    $this->log->mail("[SALES RECEIPT ".$o->id."] Ignored because Billing Address is missing.", Log::CATEGORY_QB_ORDER);
                     continue;
                 }
                 $o->billingAddress  = array(

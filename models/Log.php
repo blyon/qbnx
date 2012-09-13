@@ -1,17 +1,32 @@
 <?php
 class Log
 {
+    /**
+     * @var int DISPLAY_LEVEL Maximum error level to print to the console.
+     */
     const DISPLAY_LEVEL = 3;
-    const EMERG = 0;
-    const ALERT = 1;
-    const CRIT  = 2;
-    const ERROR = 3;
-    const WARN  = 4;
-    const NOTICE= 5;
-    const INFO  = 6;
-    const DEBUG = 7;
+
+    const CATEGORY_FATAL        = 0;
+    const CATEGORY_QB_SUCCESS   = 100;
+    const CATEGORY_QB_ORDER     = 110;
+    const CATEGORY_QB_CUSTOMER  = 111;
+    const CATEGORY_NX_SUCCESS   = 200;
+    const CATEGORY_NX_ORDER     = 210;
+    const CATEGORY_NX_CUSTOMER  = 211;
+
+    const EMERG         = 0;
+    const ALERT         = 1;
+    const CRIT          = 2;
+    const ERROR         = 3;
+    const WARN          = 4;
+    const NOTICE        = 5;
+    const INFO          = 6;
+    const DEBUG         = 7;
+
     private static $__instance;
     private $_fh;
+    private $_mailMessages = array();
+
     public $messageLength = 80;
     public $directory;
 
@@ -97,6 +112,61 @@ class Log
     }
 
 
+    public function mail($msg, $category)
+    {
+        if (!array_key_exists($category, $this->_mailMessages)) {
+            $this->_mailMessages[$category] = array();
+        }
+
+        array_push($this->_mailMessages[$category], $msg);
+    }
+
+
+    public function clearMail()
+    {
+        $this->_mailMessages = array();
+    }
+
+
+    public function sendMail($to, $subject, $prefix="", $suffix="")
+    {
+        $headers = 'From: no-reply@toesox.com' . "\r\n" .
+            'Reply-To: no-reply@toesox.com' . "\r\n" .
+            'X-Mailer: PHP/' . phpversion();
+
+        $body = $prefix;
+        foreach ($this->_mailMessages as $category => $messages) {
+            switch ($category) {
+                case self::CATEGORY_FAIL:
+                    $body .= "\n--- FATAL ERRORS ---\n";
+                    break;
+                case self::CATEGORY_QB_CUSTOMER:
+                    $body .= "\n--- QUICKBOOKS CUSTOMER ERRORS ---\n";
+                    break;
+                case self::CATEGORY_NX_CUSTOMER:
+                    $body .= "\n--- NEXTERNAL CUSTOMER ERRORS ---\n";
+                    break;
+                case self::CATEGORY_QB_ORDER:
+                    $body .= "\n--- QUICKBOOKS ORDER ERRORS ---\n";
+                    break;
+                case self::CATEGORY_NX_ORDER:
+                    $body .= "\n--- NEXTERNAL ORDER ERRORS ---\n";
+                    break;
+                case self::CATEGORY_QB_SUCCESS:
+                    $body .= "\n--- QUICKBOOKS SUCCESS ---\n";
+                    break;
+                case self::CATEGORY_NX_SUCCESS:
+                    $body .= "\n--- NEXTERNAL SUCCESS ---\n";
+                    break;
+            }
+            $body .= implode("\n", $messages);
+        }
+        $body .= $suffix;
+
+        mail($to, $subject, $body, $headers);
+    }
+
+
     private function validateLevel($level)
     {
         return in_array($level, array(
@@ -119,4 +189,5 @@ class Log
         );
         return $levels[$level];
     }
+
 }
