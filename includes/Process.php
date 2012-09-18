@@ -66,7 +66,7 @@ function pushNexternalToQuickbooks($from, $to, $orders=true)
     }
 
     // Send Email
-    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nSync Orders From: %s To %s\n\nTotal Orders Sent to QB: %d\n\n\nOrder Numbers:\n%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), date('Y-m-d H:i:s', $from), date('Y-m-d H:i:s', $to), count($totalOrders), implode("\n\t", $totalOrders));
+    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nSync Orders From: %s To %s\n\nTotal Orders Sent to QB: %d\n\n\nOrder Numbers:\n\t%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), date('Y-m-d H:i:s', $from), date('Y-m-d H:i:s', $to), count($totalOrders), implode("\n\t", $totalOrders));
     if (!empty($errors)) {
         $log = Log::getInstance();
         $log->sendMail(MAIL_ERRORS, "ERROR Report for (NX->QB)", "The following errors occurred while pushing Orders from Nexternal to Quickbooks.\n\n\n");
@@ -198,7 +198,7 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
     }
 
     // Send Email
-    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nSync Orders From: %s To %s\n\nTotal Orders Sent to NX: %d\n\n\nOrder Numbers:\n%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), date('Y-m-d H:i:s', $from), date('Y-m-d H:i:s', $to), count($totalOrders), implode("\n\t", $totalOrders));
+    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nSync Orders From: %s To %s\n\nTotal Orders Sent to NX: %d\n\n\nOrder Numbers:\n\t%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), date('Y-m-d H:i:s', $from), date('Y-m-d H:i:s', $to), count($totalOrders), implode("\n\t", $totalOrders));
     if (!empty($errors)) {
         $log = Log::getInstance();
         $log->sendMail(MAIL_ERRORS, "ERROR Report for (QB->NX)", "The following errors occurred while pushing Orders from Quickbooks to Nexternal.\n\n\n");

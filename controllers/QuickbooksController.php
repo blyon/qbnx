@@ -16,6 +16,9 @@ require_once dirname(__FILE__) . '/../models/Quickbooks.php';
 class QuickbooksController
 {
     const TAXCODE_SUFFIX = 'sbe';
+    const GIFTCERT_NAME  = "Internet Sales";
+    const DISCOUNT_NAME  = "DISCOUNT";
+    const SHIPPING_NAME  = "SHIPPING";
     private $_qb;
     public $log;
     public $last_error;
@@ -383,8 +386,21 @@ class QuickbooksController
                             'price'     => $this->_getValue($line->ItemRef,'Amount'),
                             'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
                         );
-                        // @TODO: Product, Discount, or Gift Cert?
-                        $o->products[] = $item;
+                        // Product, Discount, Gift Cert, or Shipping?
+                        switch ($item['name']) {
+                            case self::DISCOUNT_NAME:
+                                array_push($o->discounts, $item);
+                                break;
+                            case self::GIFTCERT_NAME:
+                                array_push($o->giftCerts, $item);
+                                break;
+                            //case self::SHIPPING_NAME:
+                                //array_push($o->shipping, $item);
+                                //break;
+                            default:
+                                array_push($o->products, $item);
+                                break;
+                        }
                     }
                 }
 
@@ -512,8 +528,21 @@ class QuickbooksController
                             'price'     => $this->_getValue($line->ItemRef,'Amount'),
                             'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
                         );
-                        // @TODO: Product, Discount, or Gift Cert?
-                        $o->products[] = $item;
+                        // Product, Discount, Gift Cert, or Shipping?
+                        switch ($item['name']) {
+                            case self::DISCOUNT_NAME:
+                                array_push($o->discounts, $item);
+                                break;
+                            case self::GIFTCERT_NAME:
+                                array_push($o->giftCerts, $item);
+                                break;
+                            //case self::SHIPPING_NAME:
+                                //array_push($o->shipping, $item);
+                                //break;
+                            default:
+                                array_push($o->products, $item);
+                                break;
+                        }
                     }
                 }
 
@@ -729,7 +758,7 @@ class QuickbooksController
         // Gift Certificates.
         foreach ($order->giftCerts as $gc) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(    'Internet Sales');
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(    self::GIFTCERT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                 $gc['code']);
             $lineItem->SalesReceiptLineAdd->Amount->setValue(               $gc['amount']);
         }
@@ -737,14 +766,14 @@ class QuickbooksController
         // Discounts.
         foreach ($order->discounts as $discount) {
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
-            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   'DISCOUNT');
+            $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   self::DISCOUNT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                implode(" ", array($discount['type'],$discount['name'])));
             $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount['value']);
         }
 
         // Shipping Cost.
         $lineItem = $request->ORSalesReceiptLineAddList->Append();
-        $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(      "SHIPPING");
+        $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(      self::SHIPPING_NAME);
         $lineItem->SalesReceiptLineAdd->Desc->setValue(                   "Shipping & Handling");
         if (!empty($order->shipTotal)) {
             $lineItem->SalesReceiptLineAdd->Amount->setValue(             $order->shipTotal);
