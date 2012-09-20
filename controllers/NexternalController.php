@@ -246,7 +246,7 @@ class NexternalController
             if (Nexternal::CUSTUPDATE_MAX == $customersInQueue
                 || $cid == $lastCustomer
             ) {
-                $response = $this->_processCustomerCreateResponse($this->_nx->sendDom('customerupdate.rest'));
+                $response = $this->_processCustomerCreateResponse($this->_nx->sendDom('customerupdate.rest', true));
                 if (!empty($response['errors'])) {
                     $return['errors'][$cid] = implode(", ", $response['errors']);
                     continue;
@@ -292,7 +292,7 @@ class NexternalController
             if (Nexternal::ORDERUPDATE_MAX == $ordersInQueue
                 || $cid == $lastOrder
             ) {
-                $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest'));
+                $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest', true));
                 if (!empty($response['errors'])) {
                     return false;
                 }
@@ -319,7 +319,7 @@ class NexternalController
         $this->_orderCreate($order,$customer);
 
         // Send Order to Nexternal.
-        $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest'));
+        $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest', true));
         if (!empty($response['errors'])) {
             return false;
         }
@@ -916,15 +916,13 @@ class NexternalController
             return $return;
         }
 
-
-        // Process Errors.
-        if (count($dom->children('Errors'))) {
-            $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
-            $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
-            return $return;
+        // Check for Error.
+        foreach ($dom->children() as $child) {
+            if ($child->getName() == 'Error') {
+                $return['errors'][] = $child->xpath("ErrorDescription");
+                return $return;
+            }
         }
-
 
         // Process Customers.
         if (isset($dom->Customer)) {
@@ -1077,12 +1075,12 @@ class NexternalController
             'errors' => array(),
         );
 
-        // Process Errors.
-        if (count($dom->children('Errors'))) {
-            $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $dom->Errors->ErrorDescription));
-            $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
-            return $return;
+        // Check for Error.
+        foreach ($dom->children() as $child) {
+            if ($child->getName() == 'Error') {
+                $return['errors'][] = $child->xpath("ErrorDescription");
+                return $return;
+            }
         }
 
         // Process Orders.

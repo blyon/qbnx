@@ -155,11 +155,12 @@ class Nexternal
     /**
      * Send current DOM Object to Nexternal $page.
      *
-     * @param string $page
+     * @param string  $page
+     * @param boolean $returnOnError Return DOM even if there was an error.
      *
      * @return mixed SimpleXml Object or FALSE on error.
      */
-    public function sendDom($page)
+    public function sendDom($page, $returnOnError=false)
     {
         $xml = $this->dom->asXml();
         $this->log->write(Log::INFO, "Sent Message");
@@ -178,7 +179,9 @@ class Nexternal
         foreach ($responseDom->children() as $child) {
             if ($child->getName() == 'Error') {
                 $this->log->write(Log::ERROR, $child->ErrorDescription);
-                return false;
+                if (!$returnOnError) {
+                    return false;
+                }
             }
         }
 
