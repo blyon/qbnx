@@ -233,9 +233,9 @@ class NexternalController
                 $this->log->write(Log::CRIT, "One or more customers passed to ".__FUNCTION__." is not an instance of Customer");
             }
             // Add Customer to Queue.
-            if (false === $this->_customerCreate($customer, $order)) {
-                $this->log->write(Log::ERROR, "Unable to create Customer for Order: " . $order->id);
-                $return['errors'][] = "Unable to create Customer";
+            if (true !== ($result = $this->_customerCreate($customer, $order))) {
+                $this->log->write(Log::ERROR, "[ORDER %s] Unable to create Customer for Order: %s", $order->id, $result);
+                $return['errors'][] = $result;
                 return $return;
             }
 
@@ -808,7 +808,7 @@ class NexternalController
      *
      * @param Customer $customer Valid Customer to add.
      *
-     * @return boolean TRUE if customer added to request queue.
+     * @return mixed TRUE if customer added to request queue.
      */
     private function _customerCreate(Customer $customer, Order $order, $mode = 'Add')
     {
@@ -818,8 +818,9 @@ class NexternalController
             $order_count = 1 + (int)count($this->_nx->dom->children('Customer'));
             // Make sure we won't go over the maximum number of customers per request.
             if ($order_count > (int)Nexternal::CUSTUPDATE_MAX) {
-                $this->log->write(Log::ERROR, sprintf("Maximum number of Customers [%d] already added to CustomerUpdateRequest", Nexternal::CUSTUPDATE_MAX));
-                return false;
+                $msg = sprintf("[ORDER %s] Failed to create Customer, maximum number of Customers [%d] already added to CustomerUpdateRequest", $order->id, Nexternal::CUSTUPDATE_MAX);
+                $this->log->write(Log::ERROR, sprintf($msg, Nexternal::CUSTUPDATE_MAX));
+                return $msg;
             }
         }
 
@@ -831,8 +832,9 @@ class NexternalController
             }
         }
         if (!empty($baErrors)) {
-            $this->log->mail("[ORDER ".$order->id."] Failed to create Nexternal Customer because the following fields were missing: [".implode(", ", array_keys($baErrors))."]", Log::CATEGORY_NX_ORDER);
-            return false;
+            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the following fields were missing: [%s]", $order->id, implode(", ", array_keys($baErrors)));
+            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
+            return $msg;
         }
 
         if ($this->_nx->dom->getName() != 'CustomerUpdateRequest') {
@@ -868,7 +870,9 @@ class NexternalController
 
         $cCode = Location::getCountryCode($order->billingAddress['country']);
         if (false === $cCode) {
-            $this->log->mail("[ORDER ".$order->id."] Failed to create Nexternal Customer because the Country code for Country [".$order->billingAddress['country']."] could not be found.", Log::CATEGORY_NX_ORDER);
+            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
+            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
+            return $msg;
         } else {
             $nxCust->Address->addChild('CountryCode', $cCode);
         }

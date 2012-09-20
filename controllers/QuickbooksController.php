@@ -364,15 +364,17 @@ class QuickbooksController
                     'country'   => $this->_getValue($d->BillAddress,'Country'),
                     'phone'     => $this->_getValue($d->BillAddress,'Note'),
                 );
-                $o->shippingAddress = array(
-                    'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
-                    'address2'  => $this->_getValue($d->ShipAddress,'Addr2'),
-                    'city'      => $this->_getValue($d->ShipAddress,'City'),
-                    'state'     => $this->_getValue($d->ShipAddress,'State'),
-                    'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
-                    'country'   => $this->_getValue($d->ShipAddress,'Country'),
-                    'phone'     => $this->_getValue($d->ShipAddress,'Note'),
-                );
+                if (!isset($d->ShipAddress) || !is_object($d->ShipAddress) || !isset($d->ShipAddress->Addr1)) {
+                    $o->shippingAddress = array(
+                        'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
+                        'address2'  => $this->_getValue($d->ShipAddress,'Addr2'),
+                        'city'      => $this->_getValue($d->ShipAddress,'City'),
+                        'state'     => $this->_getValue($d->ShipAddress,'State'),
+                        'zip'       => $this->_getValue($d->ShipAddress,'PostalCode'),
+                        'country'   => $this->_getValue($d->ShipAddress,'Country'),
+                        'phone'     => $this->_getValue($d->ShipAddress,'Note'),
+                    );
+                }
                 $o->products        = array();
                 $o->discounts       = array();
                 $o->giftCerts       = array();
