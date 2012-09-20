@@ -852,32 +852,33 @@ class NexternalController
         $nxCust->Name->addChild('LastName', $customer->lastName);
         $nxCust->addChild('Email', $customer->email);
         $nxCust->addChild('CustomerType', 'Consumer');
-        $nxCust->addChild('Address');
-        $nxCust->Address->addAttribute('Type', 'Residential');
-        $nxCust->Address->addChild('Name');
-        $nxCust->Address->Name->addChild('FirstName', $customer->firstName);
-        $nxCust->Address->Name->addChild('LastName', $customer->lastName);
-        $nxCust->Address->addChild('StreetAddress1', $order->billingAddress['address']);
-        if (!empty($order->billingAddress['address2'])) {
-            $nxCust->Address->addChild('StreetAddress2', $order->billingAddress['address2']);
-        }
-        $nxCust->Address->addChild('City', $order->billingAddress['city']);
-        $nxCust->Address->addChild('StateProvCode', $order->billingAddress['state']);
-        $nxCust->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
+        // NOTE: REMOVED BECAUSE QB DOES NOT HAVE A BILLING PHONE FIELD.
+        //$nxCust->addChild('Address');
+        //$nxCust->Address->addAttribute('Type', 'Residential');
+        //$nxCust->Address->addChild('Name');
+        //$nxCust->Address->Name->addChild('FirstName', $customer->firstName);
+        //$nxCust->Address->Name->addChild('LastName', $customer->lastName);
+        //$nxCust->Address->addChild('StreetAddress1', $order->billingAddress['address']);
+        //if (!empty($order->billingAddress['address2'])) {
+        //    $nxCust->Address->addChild('StreetAddress2', $order->billingAddress['address2']);
+        //}
+        //$nxCust->Address->addChild('City', $order->billingAddress['city']);
+        //$nxCust->Address->addChild('StateProvCode', $order->billingAddress['state']);
+        //$nxCust->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
 
-        if ($order->billingAddress['country'] == 'USA') {
-            $order->billingAddress['country'] = 'United States';
-        }
+        //if ($order->billingAddress['country'] == 'USA') {
+        //    $order->billingAddress['country'] = 'United States';
+        //}
 
-        $cCode = Location::getCountryCode($order->billingAddress['country']);
-        if (false === $cCode) {
-            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
-            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
-            return $msg;
-        } else {
-            $nxCust->Address->addChild('CountryCode', $cCode);
-        }
-        $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
+        //$cCode = Location::getCountryCode($order->billingAddress['country']);
+        //if (false === $cCode) {
+        //    $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
+        //    $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
+        //    return $msg;
+        //} else {
+        //    $nxCust->Address->addChild('CountryCode', $cCode);
+        //}
+        //$nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
         return true;
     }
 
