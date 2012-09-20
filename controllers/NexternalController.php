@@ -234,7 +234,7 @@ class NexternalController
             }
             // Add Customer to Queue.
             if (true !== ($result = $this->_customerCreate($customer, $order))) {
-                $this->log->write(Log::ERROR, "[ORDER %s] Unable to create Customer for Order: %s", $order->id, $result);
+                $this->log->write(Log::ERROR, sprintf("[ORDER %s] Unable to create Customer for Order: %s", $order->id, $result));
                 $return['errors'][] = $result;
                 return $return;
             }
