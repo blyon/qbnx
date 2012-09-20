@@ -825,17 +825,18 @@ class NexternalController
         }
 
         // Make sure the billing address isn't missing any info.
-        $baErrors = array();
-        foreach ($order->billingAddress as $k => $v) {
-            if (empty($v)) {
-                $baErrors[$k] = $v;
-            }
-        }
-        if (!empty($baErrors)) {
-            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the following fields were missing: [%s]", $order->id, implode(", ", array_keys($baErrors)));
-            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
-            return $msg;
-        }
+        // NOTE: REMOVED BECAUSE QB DOES NOT HAVE A BILLING PHONE FIELD.
+        //$baErrors = array();
+        //foreach ($order->billingAddress as $k => $v) {
+        //    if (empty($v)) {
+        //        $baErrors[$k] = $v;
+        //    }
+        //}
+        //if (!empty($baErrors)) {
+        //    $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the following Billing Address fields were missing: [%s]", $order->id, implode(", ", array_keys($baErrors)));
+        //    $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
+        //    return $msg;
+        //}
 
         if ($this->_nx->dom->getName() != 'CustomerUpdateRequest') {
             // Initialize DOM {@see _addCredentials}.
