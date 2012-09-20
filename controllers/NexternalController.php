@@ -1017,26 +1017,27 @@ class NexternalController
         }
 
         // Add Billing Info.
-        $a = $this->_nx->dom->OrderCreate->addChild('BillTo');
+        // NOTE: REMOVED BECAUSE QB DOES NOT HAVE A BILLING PHONE FIELD.
+        //$a = $this->_nx->dom->OrderCreate->addChild('BillTo');
 
-        $a= $a->addChild('Address');
-        $a->addAttribute('Type', 'Residential');
+        //$a= $a->addChild('Address');
+        //$a->addAttribute('Type', 'Residential');
 
-        $a->addChild('Name');
-        $a->Name->addChild('FirstName', $order->billingAddress['firstName']);
-        $a->Name->addChild('LastName', $order->billingAddress['lastName']);
+        //$a->addChild('Name');
+        //$a->Name->addChild('FirstName', $order->billingAddress['firstName']);
+        //$a->Name->addChild('LastName', $order->billingAddress['lastName']);
 
-        if(isset($order->billingAddress['company']) && !empty($order->billingAddress['company'])) {
-            $a->addChild('CompanyName', $order->billingAddress['company']);
-        }
+        //if(isset($order->billingAddress['company']) && !empty($order->billingAddress['company'])) {
+        //    $a->addChild('CompanyName', $order->billingAddress['company']);
+        //}
 
-        $a->addChild('StreetAddress1', $order->billingAddress['address']);
-        $a->addChild('StreetAddress2', $order->billingAddress['address2']);
-        $a->addChild('City', $order->billingAddress['city']);
-        $a->addChild('StateProvCode', $order->billingAddress['state']);
-        $a->addChild('ZipPostalCode', $order->billingAddress['zip']);
-        $a->addChild('CountryCode', $order->billingAddress['country']);
-        $a->addChild('PhoneNumber', $order->billingAddress['phone']);
+        //$a->addChild('StreetAddress1', $order->billingAddress['address']);
+        //$a->addChild('StreetAddress2', $order->billingAddress['address2']);
+        //$a->addChild('City', $order->billingAddress['city']);
+        //$a->addChild('StateProvCode', $order->billingAddress['state']);
+        //$a->addChild('ZipPostalCode', $order->billingAddress['zip']);
+        //$a->addChild('CountryCode', $order->billingAddress['country']);
+        //$a->addChild('PhoneNumber', $order->billingAddress['phone']);
 
         $v = $this->_nx->dom->OrderCreate->addChild('Payment');
         $v->addChild('PaymentMethod',  $order->paymentMethod['type']);
