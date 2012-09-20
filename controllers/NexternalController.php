@@ -888,7 +888,9 @@ class NexternalController
         } else {
             $nxCust->Address->addChild('CountryCode', $cCode);
         }
-        $nxCust->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
+        $nxCust->Address->addChild('PhoneNumber', ($customer->phone ?:
+            ($order->billingAddress['phone'] ?: $order->shippingAddress['phone']))
+        );
         return true;
     }
 

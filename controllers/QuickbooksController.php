@@ -221,6 +221,7 @@ class QuickbooksController
                     $c->company     = $this->_getValue($d,'CompanyName');
                     $c->type        = $this->_getValue($d->CustomerTypeRef,'FullName');
                     $c->email       = $this->_getValue($d,'Email');
+                    $c->phone       = $this->_getValue($d,'Phone');
                     $c->quickbooksId= $this->_getValue($d,'ListID');
                     $c->firstName   = $this->_getValue($d,'FirstName');
                     $c->lastName    = $this->_getValue($d,'LastName');

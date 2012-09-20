@@ -7,6 +7,7 @@ class Customer
     public $company;
     public $type;
     public $email;
+    public $phone;
     public $firstName;
     public $lastName;
     public $fullName;
