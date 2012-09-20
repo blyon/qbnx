@@ -815,9 +815,9 @@ class NexternalController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
         if (count($this->_nx->dom->children('Customer') != 0)) {
-            $order_count = 1 + (int)count($this->_nx->dom->children('Customer'));
+            $order_count = 1 + count($this->_nx->dom->children('Customer'));
             // Make sure we won't go over the maximum number of customers per request.
-            if ($order_count > (int)Nexternal::CUSTUPDATE_MAX) {
+            if ($order_count > Nexternal::CUSTUPDATE_MAX) {
                 $msg = sprintf("[ORDER %s] Failed to create Customer, maximum number of Customers [%d] already added to CustomerUpdateRequest", $order->id, Nexternal::CUSTUPDATE_MAX);
                 $this->log->write(Log::ERROR, sprintf($msg, Nexternal::CUSTUPDATE_MAX));
                 return $msg;
@@ -907,19 +907,19 @@ class NexternalController
 
         $return = array(
             'customers' => array(),
-            'errors'    => array(),
+            'errors'    => '',
         );
 
         // Make sure we have an object.
         if (!is_object($dom)) {
-            $return['errors'][] = "Invalid DOM Object.";
+            $return['errors'] = "Invalid DOM Object.";
             return $return;
         }
 
         // Check for Error.
         foreach ($dom->children() as $child) {
             if ($child->getName() == 'Error') {
-                $return['errors'][] = $child->xpath("ErrorDescription");
+                $return['errors'] = $child->xpath("ErrorDescription");
                 return $return;
             }
         }
@@ -1072,13 +1072,13 @@ class NexternalController
 
         $return = array(
             'orders' => array(),
-            'errors' => array(),
+            'errors' => '',
         );
 
         // Check for Error.
         foreach ($dom->children() as $child) {
             if ($child->getName() == 'Error') {
-                $return['errors'][] = $child->xpath("ErrorDescription");
+                $return['errors'] = $child->xpath("ErrorDescription");
                 return $return;
             }
         }
