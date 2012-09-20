@@ -814,7 +814,7 @@ class NexternalController
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
-        if(count($this->_nx->dom->children('Customer') != 0)) {
+        if (count($this->_nx->dom->children('Customer') != 0)) {
             $order_count = 1 + (int)count($this->_nx->dom->children('Customer'));
             // Make sure we won't go over the maximum number of customers per request.
             if ($order_count > (int)Nexternal::CUSTUPDATE_MAX) {
@@ -824,6 +824,17 @@ class NexternalController
             }
         }
 
+        $cErrors = array();
+        foreach (array('firstName','lastName','email','type','company') as $field) {
+            if (empty($customer->$field)) {
+                $cErrors[$field] = "Missing";
+            }
+        }
+        if (!empty($cErrors)) {
+            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the following Customer fields were missing: %s", $order->id, implode(", ", array_keys($cErrors)));
+            $this->log->mail($msg, Log::CATEGORY_NX_CUSTOMER);
+            return $msg;
+        }
         // Make sure the billing address isn't missing any info.
         // NOTE: REMOVED BECAUSE QB DOES NOT HAVE A BILLING PHONE FIELD.
         //$baErrors = array();
