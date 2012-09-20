@@ -250,12 +250,14 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
         } else {
             $result = $nexternal->createCustomers(array($qb_customer), $qbOrder);
             if (!empty($result['errors'])) {
-                $msg = sprintf("[ORDER %s]Could not create Customer[%s]: %s", $qbOrder->id, $qb_customer->type, implode(", ", $result['errors']));
+                $errors++;
+                $msg = sprintf("[ORDER %s] Could not create Customer[%s]: %s", $qbOrder->id, $qb_customer->type, implode(", ", $result['errors']));
                 $log->mail($msg, Log::CATEGORY_NX_CUSTOMER);
                 $log->write(Log::ERROR, $msg);
                 continue;
             }
             if (empty($result['customers'])) {
+                $errors++;
                 $msg = sprintf("[ORDER %s] An Unknown Error occurred when creating Customer[%s]: %s",
                     $qbOrder->id,
                     $qb_customer->type,
@@ -268,6 +270,7 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
             $customer = array_pop($result['customers']);
             // Add NX ID to QB Customer.
             if (false == $quickbooks->createCustomCustomerField($customer, "NexternalId", $customer->id, 'Customer')) {
+                $errors++;
                 $msg = sprintf("[ORDER %s] Failed to add Nexternal ID[%s] to Quickbooks Customer[%s].", $qbOrder->id, $customer->id, $qb_customer->id);
                 $log->mail($msg, Log::CATEGORY_NX_CUSTOMER);
                 $log->write(Log::ERROR, $msg);
@@ -281,6 +284,7 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
             if (false !== ($oid = $neternal->createOrder($qbOrder, $qb_customer))) {
                 $sentOrders[] = $oid;
             } else {
+                $errors++;
                 $msg = sprintf("[ORDER %s] Failed to migrate Order to Nexternal.", $qbOrder->id);
                 $log->mail($msg, Log::CATEGORY_NX_ORDER);
                 $log->write($log::ERROR, $msg);
