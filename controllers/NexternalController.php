@@ -969,7 +969,7 @@ class NexternalController
         // Add Customer.
         $c = $this->_nx->dom->OrderCreate->addChild('Customer');
         $c->addAttribute('MatchingField', 'CustomerNo');
-        $c->addChild('CustomerNo', $customer->id);
+        $c->addChild('CustomerNo', $customer->nexternalId);
 
         // Add Shipping Info.
         $s = $this->_nx->dom->OrderCreate->addChild('ShipTos')->addChild('ShipTo');

@@ -281,7 +281,7 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
             }
 
             // Create Order.
-            if (false !== ($oid = $neternal->createOrder($qbOrder, $qb_customer))) {
+            if (false !== ($oid = $nexternal->createOrder($qbOrder, $qb_customer))) {
                 $sentOrders[] = $oid;
             } else {
                 $errors++;
