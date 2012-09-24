@@ -118,6 +118,12 @@ class Nexternal
     }
 
 
+    public function resetDom()
+    {
+        $this->dom = null;
+    }
+
+
     /**
      * Add Authentication Credentials to Dom.
      */
@@ -180,11 +186,13 @@ class Nexternal
             if ($child->getName() == 'Error') {
                 $this->log->write(Log::ERROR, $child->ErrorDescription);
                 if (!$returnOnError) {
+                    $this->resetDom();
                     return false;
                 }
             }
         }
 
+        $this->resetDom();
         return $responseDom;
     }
 

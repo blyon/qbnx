@@ -269,9 +269,9 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
             }
             $customer = array_pop($result['customers']);
             // Add NX ID to QB Customer.
-            if (false == $quickbooks->createCustomCustomerField($customer, "NexternalId", $customer->id, 'Customer')) {
+            if (true !== ($result = $quickbooks->createCustomCustomerField($qb_customer->quickbooksId, "NexternalId", $customer->id, 'Customer'))) {
                 $errors++;
-                $msg = sprintf("[ORDER %s] Failed to add Nexternal ID[%s] to Quickbooks Customer[%s].", $qbOrder->id, $customer->id, $qb_customer->id);
+                $msg = sprintf("[ORDER %s] Failed to add Nexternal ID[%s] to Quickbooks Customer[%s]. Reason: %s", $qbOrder->id, $customer->id, $qb_customer->id, $result);
                 $log->mail($msg, Log::CATEGORY_NX_CUSTOMER);
                 $log->write(Log::ERROR, $msg);
                 continue;

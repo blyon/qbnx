@@ -814,7 +814,7 @@ class NexternalController
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
-        if (count($this->_nx->dom->children('Customer') != 0)) {
+        if (!empty($this->_nx->dom) && count($this->_nx->dom->children('Customer') != 0)) {
             $order_count = 1 + count($this->_nx->dom->children('Customer'));
             // Make sure we won't go over the maximum number of customers per request.
             if ($order_count > Nexternal::CUSTUPDATE_MAX) {
@@ -825,7 +825,7 @@ class NexternalController
         }
 
         $cErrors = array();
-        foreach (array('firstName','lastName','email','type','company') as $field) {
+        foreach (array('firstName','lastName','email','type','company','phone') as $field) {
             if (empty($customer->$field)) {
                 $cErrors[$field] = "Missing";
             }
@@ -848,8 +848,17 @@ class NexternalController
         //    $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
         //    return $msg;
         //}
+        if ($order->billingAddress['country'] == 'USA') {
+            $order->billingAddress['country'] = 'United States';
+        }
+        $cCode = Location::getCountryCode($order->billingAddress['country']);
+        if (false === $cCode) {
+            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
+            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
+            return $msg;
+        }
 
-        if ($this->_nx->dom->getName() != 'CustomerUpdateRequest') {
+        if (empty($this->_nx->dom) || $this->_nx->dom->getName() != 'CustomerUpdateRequest') {
             // Initialize DOM {@see _addCredentials}.
             $this->_nx->initDom('<CustomerUpdateRequest/>');
         }
@@ -875,19 +884,7 @@ class NexternalController
         $nxCust->Address->addChild('City', $order->billingAddress['city']);
         $nxCust->Address->addChild('StateProvCode', $order->billingAddress['state']);
         $nxCust->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
-
-        if ($order->billingAddress['country'] == 'USA') {
-            $order->billingAddress['country'] = 'United States';
-        }
-
-        $cCode = Location::getCountryCode($order->billingAddress['country']);
-        if (false === $cCode) {
-            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
-            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
-            return $msg;
-        } else {
-            $nxCust->Address->addChild('CountryCode', $cCode);
-        }
+        $nxCust->Address->addChild('CountryCode', $cCode);
         $nxCust->Address->addChild('PhoneNumber', ($customer->phone ?:
             ($order->billingAddress['phone'] ?: $order->shippingAddress['phone']))
         );

@@ -54,9 +54,16 @@ class QuickbooksController
      /**
      * Get create custom field for customer
      */
-    public function createCustomCustomerField($customer, $dataExtName, $dataExtValue, $table_name)
+    public function createCustomCustomerField($customerId, $dataExtName, $dataExtValue, $table_name)
     {
-        return $this->_createCustomField($customer, $dataExtName, $dataExtValue, $table_name);
+        $response = $this->_createCustomFieldUpdate($customerId, $dataExtName, $dataExtValue, $table_name);
+
+        if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
+            $this->log->write(Log::WARN, "Failed to set NexternalID on Quickbooks Customer: " . $customerId);
+            $this->log->write(Log::WARN, "Response From Quickbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            return $response->ResponseList->GetAt(0)->StatusMessage;
+        }
+        return true;
     }
 
 
@@ -565,9 +572,9 @@ class QuickbooksController
 
 
     /**
-     * Create a custom feild used to store nexternal ID's
+     * Create a custom field used to store nexternal ID's
      */
-    private function _createCustomField(Customer $customer, $dataExtName, $dataExtValue, $table_name)
+    private function _createCustomFieldUpdate($listId, $dataExtName, $dataExtValue, $table_name)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $request = $this->_qb->request->AppendDataExtModRq();
@@ -575,13 +582,11 @@ class QuickbooksController
         $request->DataExtName->setValue($dataExtName);
         $request->DataExtValue->setValue($dataExtValue);
         $request->ORListTxn->ListDataExt->ListDataExtType->SetAsString($table_name);
-        $request->ORListTxn->ListDataExt->ListObjRef->FullName->setValue($customer->fullName);
-        $response = $this->_qb->sendRequest();
+        $request->ORListTxn->ListDataExt->ListObjRef->ListID->setValue($listId);
 
-        return (0 != $response->ResponseList->GetAt(0)->StatusCode)
-            ? false
-            : true;
+        return $this->_qb->sendRequest();
     }
+
 
     /**
      * Create a custom feild used to store nexternal ID's
