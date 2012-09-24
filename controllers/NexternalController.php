@@ -294,6 +294,9 @@ class NexternalController
             ) {
                 $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest', true));
                 if (!empty($response['errors'])) {
+                    $msg = sprintf("[ORDER %s] Not Created: %s", $order->id, implode(', ', $response['errors']));
+                    $this->log->mail($msg, LOG::CATEGORY_NX_ORDER);
+                    $this->log->write(Log::ERROR, $msg);
                     return false;
                 }
                 if (count($response['orders']) != $ordersInQueue) {
@@ -321,6 +324,9 @@ class NexternalController
         // Send Order to Nexternal.
         $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest', true));
         if (!empty($response['errors'])) {
+            $msg = sprintf("[ORDER %s] Not Created: %s", $order->id, implode(', ', $response['errors']));
+            $this->log->mail($msg, LOG::CATEGORY_NX_ORDER);
+            $this->log->write(Log::ERROR, $msg);
             return false;
         }
         return $response['orders'][0]->id;
