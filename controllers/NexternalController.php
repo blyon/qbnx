@@ -300,7 +300,7 @@ class NexternalController
                     return false;
                 }
                 if (count($response['orders']) != $ordersInQueue) {
-                    $this->log->write(Log::ERROR, sptrinf("The number of orders returned from Order[%d] does not match the number of Order Sent[%d]", count($response['orders'], $ordersInQueue)));
+                    $this->log->write(Log::ERROR, sprintf("The number of orders returned from Order[%d] does not match the number of Order Sent[%d]", count($response['orders'], $ordersInQueue)));
                 }
             }
         }
@@ -983,8 +983,8 @@ class NexternalController
         $s->Address->addAttribute('Type', 'Residential');
 
         $s->Address->addChild('Name');
-        $s->Address->Name->addChild('FirstName', $order->billingAddress['firstName']);
-        $s->Address->Name->addChild('LastName', $order->billingAddress['lastName']);
+        $s->Address->Name->addChild('FirstName', $customer->firstName);
+        $s->Address->Name->addChild('LastName', $customer->lastName);
         //$s->Address->addChild('CompanyName', $order->billingAddress['company']);
         $s->Address->addChild('StreetAddress1', $order->billingAddress['address']);
         $s->Address->addChild('StreetAddress2', $order->billingAddress['address2']);

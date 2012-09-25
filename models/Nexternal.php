@@ -184,7 +184,7 @@ class Nexternal
         // Check for Error.
         foreach ($responseDom->children() as $child) {
             if ($child->getName() == 'Error') {
-                $this->log->write(Log::ERROR, $child->ErrorDescription);
+                $this->log->write(Log::ERROR, "Error from Nexternal: " . $child->ErrorDescription);
                 if (!$returnOnError) {
                     $this->resetDom();
                     return false;
@@ -192,7 +192,6 @@ class Nexternal
             }
         }
 
-        $this->resetDom();
         return $responseDom;
     }
 

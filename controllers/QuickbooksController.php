@@ -44,7 +44,7 @@ class QuickbooksController
             $this->_createCustomerQuery($id)
         );
         if (empty($customer)) {
-            $this->log->write(Log::NOTICE, sprintf("Could not find Customer by Name[%s].", $name));
+            $this->log->write(Log::NOTICE, sprintf("Could not find Customer by ID[%s].", $id));
             return false;
         }
         return array_shift($customer);
@@ -300,6 +300,7 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".print_r($dateRange, true).")");
 
         $query = $this->_qb->request->AppendInvoiceQueryRq();
+        $query->IncludeLineItems->setValue(true);
 
         if ($txnId) {
             $query->ORInvoiceQuery->InvoiceFilter->InvoiceIDList->setValue($txnId);
@@ -386,9 +387,9 @@ class QuickbooksController
                 $o->products        = array();
                 $o->discounts       = array();
                 $o->giftCerts       = array();
-                if (isset($d->ORSalesReceiptLineRetList)) {
-                    for ($n=0; $n<$d->ORSalesReceiptLineRetList->Count; $n++) {
-                        $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
+                if (isset($d->ORInvoiceLineRetList) && !is_null($d->ORInvoiceLineRetList)) {
+                    for ($n=0; $n<$d->ORInvoiceLineRetList->Count; $n++) {
+                        $line = &$d->ORInvoiceLineRetList->GetAt($n)->InvoiceLineRet;
                         $item = array(
                             'type'      => $this->_getValue($line->ItemRef,'ListID'),
                             'name'      => $this->_getValue($line->ItemRef,'FullName'),
@@ -416,7 +417,11 @@ class QuickbooksController
 
                 $o->nexternalId = $this->_getValue($d,'Other');
 
-                $orders[] = $o;
+                if (empty($o->products)) {
+                    $this->log->write(LOG::WARN, sprintf("[INVOICE %s] IGNORED -- No Products Found!", $o->id));
+                } else {
+                    $orders[] = $o;
+                }
 
                 // write Orders to File if we've reached our cache cap.
                 if (MEMORY_CAP <= memory_get_usage()) {
@@ -443,6 +448,7 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$txnId.",".$refId.",".print_r($dateRange, true).")");
 
         $query = $this->_qb->request->AppendSalesReceiptQueryRq();
+        $query->IncludeLineItems->setValue(true);
 
         if ($txnId) {
             $query->ORTxnQuery->TxnFilter->TxnIDList->setValue($txnId);

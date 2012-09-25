@@ -279,17 +279,17 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
                 $log->write(Log::INFO, sprintf("Nexternal Customer[%s] pushed to Quickbooks.", $customer->id));
                 $qb_customer->nexternalId = $customer->nexternalId;
             }
+        }
 
-            // Create Order.
-            if (false !== ($oid = $nexternal->createOrder($qbOrder, $qb_customer))) {
-                $sentOrders[] = $oid;
-            } else {
-                $errors++;
-                $msg = sprintf("[ORDER %s] Failed to migrate Order to Nexternal.", $qbOrder->id);
-                $log->mail($msg, Log::CATEGORY_NX_ORDER);
-                $log->write($log::ERROR, $msg);
-                continue;
-            }
+        // Create Order.
+        if (false !== ($oid = $nexternal->createOrder($qbOrder, $qb_customer))) {
+            $sentOrders[] = $oid;
+        } else {
+            $errors++;
+            $msg = sprintf("[ORDER %s] Failed to migrate Order to Nexternal.", $qbOrder->id);
+            $log->mail($msg, Log::CATEGORY_NX_ORDER);
+            $log->write($log::ERROR, $msg);
+            continue;
         }
     }
     return array('sentOrders' => $sentOrders, 'errors' => $errors);
