@@ -329,7 +329,14 @@ class NexternalController
             $this->log->write(Log::ERROR, $msg);
             return false;
         }
-        return $response['orders'][0]->id;
+        if (!empty($response['orders'])) {
+            return $response['orders'][0]->id;
+        } else {
+            $msg = sprintf("[ORDER %s] Not Created: %s", $order->id, "Unknown Reason.");
+            $this->log->mail($msg, LOG::CATEGORY_NX_ORDER);
+            $this->log->write(Log::ERROR, $msg);
+            return false;
+        }
     }
 
 
@@ -1091,18 +1098,15 @@ class NexternalController
             if ($child->getName() == 'Error') {
                 $return['errors'] = $child->xpath("ErrorDescription");
                 return $return;
-            }
-        }
+            } elseif ($child->getName() == 'Order') {
+                foreach ($child->children() as $order) {
+                    $o = new Order;
+                    $o->id              = (string) $order->OrderNo;
+                    $o->status          = (string) $order->OrderStatus;
+                    $o->paymentStatus   = (string) $order->BillingStatus;
 
-        // Process Orders.
-        if (isset($dom->Order)) {
-            foreach ($dom->Order as $order) {
-                $o = new Order;
-                $o->id              = (string) $order->OrderNo;
-                $o->status          = (string) $order->OrderStatus;
-                $o->paymentStatus   = (string) $order->BillingStatus;
-
-                $return['orders'][] = $o;
+                    $return['orders'][] = $o;
+                }
             }
         }
 
