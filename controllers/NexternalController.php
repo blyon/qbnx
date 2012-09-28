@@ -966,7 +966,7 @@ class NexternalController
 
         // Let Nexternal know these orders are from an external system.
         $this->_nx->dom->OrderCreate->addAttribute('Mode', 'Import');
-        $this->_nx->dom->OrderCreate->addChild('BillingStatus',$order->paymentStatus);
+        $this->_nx->dom->OrderCreate->addChild('BillingStatus','Paid');
 
         $t = $this->_nx->dom->OrderCreate->addChild('OrderDate')->addChild('DateTime');
         $t->addChild('Date', date('m/d/Y', $order->timestamp));
