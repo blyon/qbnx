@@ -1094,6 +1094,10 @@ class NexternalController
         );
 
         // Check for Error.
+        if (is_string($dom)) {
+            $return['errors'] = $child->xpath("ErrorDescription");
+            return $return;
+        }
         foreach ($dom->children() as $child) {
             if ($child->getName() == 'Error') {
                 $return['errors'] = $child->xpath("ErrorDescription");
