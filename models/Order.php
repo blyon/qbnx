@@ -2,6 +2,9 @@
 
 class Order
 {
+    const PAYMENTMETHOD_INVOICE = "Invoice";
+    const PAYMENTSTATUS_PAID    = "Paid";
+
     public $id;
     public $nexternalId;
     public $timestamp;

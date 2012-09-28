@@ -355,8 +355,8 @@ class QuickbooksController
                 $o->memo            = $this->_getValue($d,'Memo');
                 $o->location;
                 $o->ip;
-                $o->paymentStatus;
-                $o->paymentMethod;
+                $o->paymentStatus   = Order::PAYMENTSTATUS_PAID;
+                $o->paymentMethod   = Order::PAYMENTMETHOD_INVOICE;
                 if (isset($d->CustomerRef)) {
                     $o->customer    = $this->_getValue($d->CustomerRef,'ListID');
                 }
