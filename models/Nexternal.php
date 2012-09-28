@@ -168,7 +168,7 @@ class Nexternal
      */
     public function sendDom($page, $returnOnError=false)
     {
-        $xml = $this->dom->asXml();
+        $xml = $this->dom->asXML();
         $this->log->write(Log::INFO, "Sent Message");
         $this->log->write(Log::INFO, $xml);
 
@@ -187,7 +187,7 @@ class Nexternal
                 $this->log->write(Log::ERROR, "Error from Nexternal: " . $child->ErrorDescription);
                 if (!$returnOnError) {
                     $this->resetDom();
-                    return false;
+                    return $child->ErrorDescription;
                 }
             }
         }

@@ -265,6 +265,7 @@ class NexternalController
 
 
     /**
+     * NOT USED!
      * Create Orders on Nexternal.
      *
      * Note: Only 15 orders can be created per transaction, the orders array
@@ -292,7 +293,7 @@ class NexternalController
             if (Nexternal::ORDERUPDATE_MAX == $ordersInQueue
                 || $cid == $lastOrder
             ) {
-                $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest', true));
+                $response = $this->_processOrderCreateResponse($this->_orderCreate($order,$customer));
                 if (!empty($response['errors'])) {
                     $msg = sprintf("[ORDER %s] Not Created: %s", $order->id, implode(', ', $response['errors']));
                     $this->log->mail($msg, LOG::CATEGORY_NX_ORDER);
@@ -319,10 +320,9 @@ class NexternalController
     public function createOrder(Order $order, Customer $customer)
     {
         // Add Order to Queue.
-        $this->_orderCreate($order,$customer);
+        $response = $this->_processOrderCreateResponse($this->_orderCreate($order,$customer));
 
         // Send Order to Nexternal.
-        $response = $this->_processOrderCreateResponse($this->_nx->sendDom('ordercreate.rest', true));
         if (!empty($response['errors'])) {
             $msg = sprintf("[ORDER %s] Not Created: %s", $order->id, implode(', ', $response['errors']));
             $this->log->mail($msg, LOG::CATEGORY_NX_ORDER);
@@ -1011,7 +1011,7 @@ class NexternalController
             $p->addChild('ProductSKU', $product['sku']);
             $p->addChild('Qty', $product['qty']);
             $p->addChild('UnitPrice', $product['price']);
-            $p->addChild('LineItemStatus', 'Shipped');
+            $p->addChild('LineItemStatus', 'In Process');
         }
 
         // Add Discounts.
@@ -1063,13 +1063,10 @@ class NexternalController
         //$a->addChild('PhoneNumber', $order->billingAddress['phone']);
 
         $v = $this->_nx->dom->OrderCreate->addChild('Payment');
-        $v->addChild('PaymentMethod', $order->paymentMethod['type']);
+        $v->addChild('PaymentMethod', $order->paymentMethod);
 
-        // Send XML to Nexternal.
-        $responseDom = $this->_nx->sendDom('ordercreate.rest');
-
-        // Return Response Dom.
-        return $responseDom;
+        // Send XML to Nexternal and return response.
+        return $this->_nx->sendDom('ordercreate.rest');
     }
 
 
