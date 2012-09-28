@@ -173,10 +173,7 @@ function pushQuickbooksToNexternal($from, $to, $orders=true)
     }
 
     if ($orders) {
-        $qbOrders    = array_merge(
-            $quickbooks->getSalesReceiptByDate($from, $to),
-            $quickbooks->getInvoicesByDate($from, $to)
-        );
+        $qbOrders = $quickbooks->getInvoicesByDate($from, $to);
 
         // Check for Cache before sending orders to QB.
         if (file_exists(CACHE_DIR . QUICKBOOKS_ORDER_CACHE . CACHE_EXT)) {
