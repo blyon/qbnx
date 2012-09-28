@@ -187,7 +187,7 @@ class Nexternal
                 $this->log->write(Log::ERROR, "Error from Nexternal: " . $child->ErrorDescription);
                 if (!$returnOnError) {
                     $this->resetDom();
-                    return $child->ErrorDescription;
+                    return $responseDom;
                 }
             }
         }

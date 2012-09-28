@@ -1073,7 +1073,7 @@ class NexternalController
         $v->addChild('PaymentMethod', $order->paymentMethod);
 
         // Send XML to Nexternal and return response.
-        return $this->_nx->sendDom('ordercreate.rest');
+        return $this->_nx->sendDom('ordercreate.rest', true);
     }
 
 
@@ -1094,10 +1094,6 @@ class NexternalController
         );
 
         // Check for Error.
-        if (is_string($dom)) {
-            $return['errors'] = $child->xpath("ErrorDescription");
-            return $return;
-        }
         foreach ($dom->children() as $child) {
             if ($child->getName() == 'Error') {
                 $return['errors'] = $child->xpath("ErrorDescription");
