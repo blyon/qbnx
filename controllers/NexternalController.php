@@ -283,19 +283,6 @@ class NexternalController
             if (!($order instanceof Order)) {
                 $this->log->write(Log::CRIT, "One or more orders passed to ".__FUNCTION__." is not an instance of Order");
             }
-
-            // Update Country.
-            if ($order->billingAddress['country'] == 'USA') {
-                $order->billingAddress['country'] = 'United States';
-            }
-            $cCode = Location::getCountryCode($order->billingAddress['country']);
-            if (false === $cCode) {
-                $msg = sprintf("[ORDER %s] Failed to create Nexternal Order because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
-                $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
-                $this->log->write(Log::ERROR, $msg);
-                return false;
-            }
-
             // Add Order to Queue.
             $this->_orderCreate($order,$customers[$order->customer]);
 
@@ -331,18 +318,6 @@ class NexternalController
      */
     public function createOrder(Order $order, Customer $customer)
     {
-        // Update Country.
-        if ($order->billingAddress['country'] == 'USA') {
-            $order->billingAddress['country'] = 'United States';
-        }
-        $cCode = Location::getCountryCode($order->billingAddress['country']);
-        if (false === $cCode) {
-            $msg = sprintf("[ORDER %s] Failed to create Nexternal Order because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
-            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
-            $this->log->write(Log::ERROR, $msg);
-            return false;
-        }
-
         // Add Order to Queue.
         $this->_orderCreate($order,$customer);
 
@@ -984,6 +959,16 @@ class NexternalController
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$order->id.")");
 
+        if ($order->billingAddress['country'] == 'USA') {
+            $order->billingAddress['country'] = 'United States';
+        }
+        $cCode = Location::getCountryCode($order->billingAddress['country']);
+        if (false === $cCode) {
+            $msg = sprintf("[ORDER %s] Failed to create Nexternal Order because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
+            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
+            return false;
+        }
+
         // Initialize DOM {@see _addCredentials}.
         $this->_nx->initDom('<OrderCreateRequest/>');
 
@@ -1016,7 +1001,7 @@ class NexternalController
         $s->Address->addChild('City', $order->billingAddress['city']);
         $s->Address->addChild('StateProvCode', $order->billingAddress['state']);
         $s->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
-        $s->Address->addChild('CountryCode', $order->billingAddress['country']);
+        $s->Address->addChild('CountryCode', $cCode);
         $s->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
 
         // Add Products.
