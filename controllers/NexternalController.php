@@ -838,7 +838,7 @@ class NexternalController
         }
         if (!empty($cErrors)) {
             $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the following Customer fields were missing: %s", $order->id, implode(", ", array_keys($cErrors)));
-            $this->log->mail($msg, Log::CATEGORY_NX_CUSTOMER);
+            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
             return $msg;
         }
         // Make sure the billing address isn't missing any info.
@@ -998,10 +998,10 @@ class NexternalController
         $s->addChild('Products');
         foreach ($order->products as $product) {
             $p = $s->Products->addChild('Product');
-            $p->addChild('ProductSKU', $product->sku);
-            $p->addChild('Qty', $product->qty);
-            $p->addChild('UnitPrice', $product->price);
-            $p->addChild('LineItemStatus', 'In Process');
+            $p->addChild('ProductSKU', $product['sku']);
+            $p->addChild('Qty', $product['qty']);
+            $p->addChild('UnitPrice', $product['price']);
+            $p->addChild('LineItemStatus', 'Shipped');
         }
 
         // Add Discounts.

@@ -392,10 +392,10 @@ class QuickbooksController
                         $line = &$d->ORInvoiceLineRetList->GetAt($n)->InvoiceLineRet;
                         $item = array(
                             'type'      => $this->_getValue($line->ItemRef,'ListID'),
-                            'name'      => $this->_getValue($line->ItemRef,'FullName'),
-                            'qty'       => $this->_getValue($line->ItemRef,'Quantity'),
-                            'price'     => $this->_getValue($line->ItemRef,'Amount'),
-                            'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
+                            'sku'       => $this->_getValue($line->ItemRef,'FullName'),
+                            'name'      => $this->_getValue($line,'Desc'),
+                            'qty'       => $this->_getValue($line,'Quantity'),
+                            'price'     => $this->_getValue($line,'Amount'),
                         );
                         // Product, Discount, Gift Cert, or Shipping?
                         switch ($item['name']) {
@@ -539,10 +539,10 @@ class QuickbooksController
                         $line = &$d->ORSalesReceiptLineRetList->GetAt($n)->SalesReceiptLineRet;
                         $item = array(
                             'type'      => $this->_getValue($line->ItemRef,'ListID'),
-                            'name'      => $this->_getValue($line->ItemRef,'FullName'),
-                            'qty'       => $this->_getValue($line->ItemRef,'Quantity'),
-                            'price'     => $this->_getValue($line->ItemRef,'Amount'),
-                            'tracking'  => $this->_getValue($line->ItemRef,'Other1'),
+                            'sku'       => $this->_getValue($line->ItemRef,'FullName'),
+                            'name'      => $this->_getValue($line,'Desc'),
+                            'qty'       => $this->_getValue($line,'Quantity'),
+                            'price'     => $this->_getValue($line,'Amount'),
                         );
                         // Product, Discount, Gift Cert, or Shipping?
                         switch ($item['name']) {
