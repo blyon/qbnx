@@ -1002,7 +1002,7 @@ class NexternalController
         $s->Address->addChild('StateProvCode', $order->billingAddress['state']);
         $s->Address->addChild('ZipPostalCode', $order->billingAddress['zip']);
         $s->Address->addChild('CountryCode', $cCode);
-        $s->Address->addChild('PhoneNumber', $order->billingAddress['phone']);
+        $s->Address->addChild('PhoneNumber', $customer->phone);
 
         // Add Products.
         $s->addChild('Products');
