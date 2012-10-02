@@ -337,6 +337,7 @@ class QuickbooksController
             return $orders;
         }
 
+        $this->log->write(Log::INFO, "Invoices Found: " . $response->ResponseList->Count);
         for ($i=0; $i<$response->ResponseList->Count; $i++) {
             $details = &$response->ResponseList->GetAt($i)->Detail;
             for ($n=0; $n<$details->Count; $n++) {
@@ -362,7 +363,7 @@ class QuickbooksController
                 }
                 if (!isset($d->BillAddress) || !is_object($d->BillAddress) || !isset($d->BillAddress->Addr1)) {
                     $this->log->mail("[INVOICE ".$o->id."] Ignored because Billing Address is missing.", Log::CATEGORY_QB_ORDER);
-                    continue;
+                    continue 2;
                 }
                 $o->billingAddress  = array(
                     'address'   => $this->_getValue($d->BillAddress,'Addr1'),
@@ -387,9 +388,10 @@ class QuickbooksController
                 $o->products        = array();
                 $o->discounts       = array();
                 $o->giftCerts       = array();
+                $o->shipping        = array();
                 if (isset($d->ORInvoiceLineRetList) && !is_null($d->ORInvoiceLineRetList)) {
-                    for ($n=0; $n<$d->ORInvoiceLineRetList->Count; $n++) {
-                        $line = &$d->ORInvoiceLineRetList->GetAt($n)->InvoiceLineRet;
+                    for ($x=0; $x<$d->ORInvoiceLineRetList->Count; $x++) {
+                        $line = &$d->ORInvoiceLineRetList->GetAt($x)->InvoiceLineRet;
                         $item = array(
                             'type'      => $this->_getValue($line->ItemRef,'ListID'),
                             'sku'       => $this->_getValue($line->ItemRef,'FullName'),
@@ -397,17 +399,21 @@ class QuickbooksController
                             'qty'       => $this->_getValue($line,'Quantity'),
                             'price'     => $this->_getValue($line,'Amount'),
                         );
+                        // Make sure we have a SKU.
+                        if (empty($item['sku'])) {
+                            continue;
+                        }
                         // Product, Discount, Gift Cert, or Shipping?
-                        switch ($item['name']) {
+                        switch ($item['sku']) {
                             case self::DISCOUNT_NAME:
                                 array_push($o->discounts, $item);
                                 break;
                             case self::GIFTCERT_NAME:
                                 array_push($o->giftCerts, $item);
                                 break;
-                            //case self::SHIPPING_NAME:
-                                //array_push($o->shipping, $item);
-                                //break;
+                            case self::SHIPPING_NAME:
+                                array_push($o->shipping, $item);
+                                break;
                             default:
                                 array_push($o->products, $item);
                                 break;
@@ -735,8 +741,21 @@ class QuickbooksController
         }
 
         // Billing Address.
-        $request->BillAddress->Addr1->setValue(           $order->billingAddress['address']);
-        $request->BillAddress->Addr2->setValue(           $order->billingAddress['address2']);
+        $x=1;
+        if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
+            $addr = "Addr".$x;
+            $request->BillAddress->$addr->setValue(       $order->billingAddress['firstName']." ".$order->billingAddress['lastName']);
+            $x++;
+        }
+        if (isset($order->billingAddress['company'])) {
+            $addr = "Addr".$x;
+            $request->BillAddress->$addr->setValue(       $order->billingAddress['company']);
+            $x++;
+        }
+        $addr = "Addr".$x;$x++;
+        $request->BillAddress->$addr->setValue(           $order->billingAddress['address']);
+        $addr = "Addr".$x;$x++;
+        $request->BillAddress->$addr->setValue(           $order->billingAddress['address2']);
         $request->BillAddress->City->setValue(            $order->billingAddress['city']);
         $request->BillAddress->State->setValue(           $order->billingAddress['state']);
         $request->BillAddress->PostalCode->setValue(      $order->billingAddress['zip']);
@@ -747,14 +766,27 @@ class QuickbooksController
 
         // Shipping Address.
         if (!empty($order->shippingAddress)) {
-            $request->ShipAddress->Addr1->setValue(           $order->shippingAddress['address']);
-            $request->ShipAddress->Addr2->setValue(           $order->shippingAddress['address2']);
-            $request->ShipAddress->City->setValue(            $order->shippingAddress['city']);
-            $request->ShipAddress->State->setValue(           $order->shippingAddress['state']);
-            $request->ShipAddress->PostalCode->setValue(      $order->shippingAddress['zip']);
-            $request->ShipAddress->Country->setValue(         $order->shippingAddress['country']);
+            $x=1;
+            if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
+                $addr = "Addr".$x;
+                $request->ShipAddress->$addr->setValue(   $order->shippingAddress['firstName']." ".$order->shippingAddress['lastName']);
+                $x++;
+            }
+            if (isset($order->shippingAddress['company'])) {
+                $addr = "Addr".$x;
+                $request->ShipAddress->$addr->setValue(   $order->shippingAddress['company']);
+                $x++;
+            }
+            $addr = "Addr".$x;$x++;
+            $request->ShipAddress->$addr->setValue(       $order->shippingAddress['address']);
+            $addr = "Addr".$x;$x++;
+            $request->ShipAddress->$addr->setValue(       $order->shippingAddress['address2']);
+            $request->ShipAddress->City->setValue(        $order->shippingAddress['city']);
+            $request->ShipAddress->State->setValue(       $order->shippingAddress['state']);
+            $request->ShipAddress->PostalCode->setValue(  $order->shippingAddress['zip']);
+            $request->ShipAddress->Country->setValue(     $order->shippingAddress['country']);
             if (isset($order->shippingAddress['phone'])) {
-                $request->ShipAddress->Note->setValue(        $order->shippingAddress['phone']);
+                $request->ShipAddress->Note->setValue(    $order->shippingAddress['phone']);
             }
         }
 

@@ -844,8 +844,8 @@ class NexternalController
             }
         }
         if (!empty($cErrors)) {
-            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the following Customer fields were missing: %s", $order->id, implode(", ", array_keys($cErrors)));
-            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
+            $msg = sprintf("Failed to create Nexternal Customer because the following Customer fields were missing: %s", implode(", ", array_keys($cErrors)));
+            $this->log->mail("[ORDER ".$order->id."] " . $msg, Log::CATEGORY_NX_ORDER);
             return $msg;
         }
         // Make sure the billing address isn't missing any info.
@@ -866,8 +866,8 @@ class NexternalController
         }
         $cCode = Location::getCountryCode($order->billingAddress['country']);
         if (false === $cCode) {
-            $msg = sprintf("[ORDER %s] Failed to create Nexternal Customer because the Country code for Country [%s] could not be found.", $order->id, $order->billingAddress['country']);
-            $this->log->mail($msg, Log::CATEGORY_NX_ORDER);
+            $msg = sprintf("Failed to create Nexternal Customer because the Country code for Country [%s] could not be found.", $order->billingAddress['country']);
+            $this->log->mail("ORDER ".$order->id."] " . $msg, Log::CATEGORY_NX_ORDER);
             return $msg;
         }
 
