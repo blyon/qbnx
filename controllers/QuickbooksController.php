@@ -713,6 +713,7 @@ class QuickbooksController
 
         // Query for Sales Tax.
         $code = '';
+        $itemCode = "Tax";
         if (!empty($order->taxRate)) {
             $code = $this->_requestTaxItem($order->taxRate);
             if ($code == false) {
@@ -720,6 +721,7 @@ class QuickbooksController
             }
         } else {
             $code = 'Out of State (' . strtoupper(self::TAXCODE_SUFFIX) . ')';
+            $itemCode = "No";
         }
 
         // Build Request.
@@ -799,6 +801,7 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->Quantity->setValue(                    $product['qty']);
             $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(                 $order_date);
             $lineItem->SalesReceiptLineAdd->InventorySiteRef->FullName->setValue(  "Main");
+            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue(    $itemCode);
         }
 
         // Gift Certificates.
@@ -807,6 +810,7 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(    self::GIFTCERT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                 $gc['code']);
             $lineItem->SalesReceiptLineAdd->Amount->setValue(               $gc['amount']);
+            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("No");
         }
 
         // Discounts.
@@ -815,12 +819,14 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   self::DISCOUNT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                implode(" ", array($discount['type'],$discount['name'])));
             $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount['value']);
+            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("No");
         }
 
         // Shipping Cost.
         $lineItem = $request->ORSalesReceiptLineAddList->Append();
         $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(      self::SHIPPING_NAME);
         $lineItem->SalesReceiptLineAdd->Desc->setValue(                   "Shipping & Handling");
+        $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("No");
         if (!empty($order->shipTotal)) {
             $lineItem->SalesReceiptLineAdd->Amount->setValue(             $order->shipTotal);
         }
