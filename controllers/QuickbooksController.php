@@ -352,7 +352,7 @@ class QuickbooksController
                 $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
                 $o->taxRate         = $this->_getValue($d,'SalesTaxPercentage');
                 //$o->shipTotal;
-                $o->total           = $this->_getValue($d,'TotalAmount');
+                $o->total           = floatval($o->subTotal + $o->taxTotal);
                 $o->memo            = $this->_getValue($d,'Memo');
                 $o->location;
                 $o->ip;
@@ -374,7 +374,7 @@ class QuickbooksController
                     'country'   => $this->_getValue($d->BillAddress,'Country'),
                     'phone'     => $this->_getValue($d->BillAddress,'Note'),
                 );
-                if (!isset($d->ShipAddress) || !is_object($d->ShipAddress) || !isset($d->ShipAddress->Addr1)) {
+                if (isset($d->ShipAddress) && is_object($d->ShipAddress) && isset($d->ShipAddress->Addr1)) {
                     $o->shippingAddress = array(
                         'address'   => $this->_getValue($d->ShipAddress,'Addr1'),
                         'address2'  => $this->_getValue($d->ShipAddress,'Addr2'),
@@ -396,23 +396,26 @@ class QuickbooksController
                             'type'      => $this->_getValue($line->ItemRef,'ListID'),
                             'sku'       => $this->_getValue($line->ItemRef,'FullName'),
                             'name'      => $this->_getValue($line,'Desc'),
-                            'qty'       => $this->_getValue($line,'Quantity'),
-                            'price'     => $this->_getValue($line,'Amount'),
+                            'qty'       => (int)$this->_getValue($line,'Quantity'),
+                            'price'     => floatval($this->_getValue($line,'Amount')),
                         );
                         // Make sure we have a SKU.
                         if (empty($item['sku'])) {
                             continue;
                         }
                         // Product, Discount, Gift Cert, or Shipping?
-                        switch ($item['sku']) {
+                        switch (strtoupper($item['sku'])) {
                             case self::DISCOUNT_NAME:
                                 array_push($o->discounts, $item);
+                                $o->total -= $item['price'];
                                 break;
                             case self::GIFTCERT_NAME:
                                 array_push($o->giftCerts, $item);
+                                $o->total -= ($item['qty'] * $item['price']);
                                 break;
                             case self::SHIPPING_NAME:
                                 array_push($o->shipping, $item);
+                                $o->total += $item['price'];
                                 break;
                             default:
                                 array_push($o->products, $item);
@@ -551,7 +554,7 @@ class QuickbooksController
                             'price'     => $this->_getValue($line,'Amount'),
                         );
                         // Product, Discount, Gift Cert, or Shipping?
-                        switch ($item['name']) {
+                        switch (strtoupper($item['name'])) {
                             case self::DISCOUNT_NAME:
                                 array_push($o->discounts, $item);
                                 break;
