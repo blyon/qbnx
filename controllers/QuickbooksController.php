@@ -352,7 +352,7 @@ class QuickbooksController
                 $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
                 $o->taxRate         = $this->_getValue($d,'SalesTaxPercentage');
                 //$o->shipTotal;
-                $o->total           = floatval($o->subTotal + $o->taxTotal);
+                $o->total           = $o->subTotal;
                 $o->memo            = $this->_getValue($d,'Memo');
                 $o->location;
                 $o->ip;
@@ -407,15 +407,12 @@ class QuickbooksController
                         switch (strtoupper($item['sku'])) {
                             case self::DISCOUNT_NAME:
                                 array_push($o->discounts, $item);
-                                $o->total -= $item['price'];
                                 break;
                             case self::GIFTCERT_NAME:
                                 array_push($o->giftCerts, $item);
-                                $o->total -= ($item['qty'] * $item['price']);
                                 break;
                             case self::SHIPPING_NAME:
                                 array_push($o->shipping, $item);
-                                $o->total += $item['price'];
                                 break;
                             default:
                                 array_push($o->products, $item);
