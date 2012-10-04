@@ -744,14 +744,19 @@ class QuickbooksController
 
         // Billing Address.
         $x=1;
+        $addrString = "";
         if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
-            $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue(       $order->billingAddress['firstName']." ".$order->billingAddress['lastName']);
-            $x++;
+            $addrString = sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']);
         }
         if (isset($order->billingAddress['company'])) {
+            if (!empty($addrString)) {
+                $addrString .= " | ";
+            }
+            $addrString .= $order->billingAddress['company'];
+        }
+        if (!empty($addrString)) {
             $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue(       $order->billingAddress['company']);
+            $request->BillAddress->$addr->setValue(       $addrString);
             $x++;
         }
         $addr = "Addr".$x;$x++;
@@ -762,21 +767,26 @@ class QuickbooksController
         $request->BillAddress->State->setValue(           $order->billingAddress['state']);
         $request->BillAddress->PostalCode->setValue(      $order->billingAddress['zip']);
         $request->BillAddress->Country->setValue(         $order->billingAddress['country']);
-        if (isset($order->billingAddress['phone'])) {
-            $request->BillAddress->Note->setValue(        $order->billingAddress['phone']);
-        }
+        //if (isset($order->billingAddress['phone'])) {
+            //$request->BillAddress->Note->setValue(        $order->billingAddress['phone']);
+        //}
 
         // Shipping Address.
         if (!empty($order->shippingAddress)) {
             $x=1;
+            $addrString = "";
             if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
-                $addr = "Addr".$x;
-                $request->ShipAddress->$addr->setValue(   $order->shippingAddress['firstName']." ".$order->shippingAddress['lastName']);
-                $x++;
+                $addrString = sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']);
             }
             if (isset($order->shippingAddress['company'])) {
+                if (!empty($addrString)) {
+                    $addrString .= " | ";
+                }
+                $addrString .= $order->shippingAddress['company'];
+            }
+            if (!empty($addrString)) {
                 $addr = "Addr".$x;
-                $request->ShipAddress->$addr->setValue(   $order->shippingAddress['company']);
+                $request->ShipAddress->$addr->setValue(   $addrString);
                 $x++;
             }
             $addr = "Addr".$x;$x++;
@@ -787,9 +797,9 @@ class QuickbooksController
             $request->ShipAddress->State->setValue(       $order->shippingAddress['state']);
             $request->ShipAddress->PostalCode->setValue(  $order->shippingAddress['zip']);
             $request->ShipAddress->Country->setValue(     $order->shippingAddress['country']);
-            if (isset($order->shippingAddress['phone'])) {
-                $request->ShipAddress->Note->setValue(    $order->shippingAddress['phone']);
-            }
+            //if (isset($order->shippingAddress['phone'])) {
+                //$request->ShipAddress->Note->setValue(    $order->shippingAddress['phone']);
+            //}
         }
 
         // Products.
