@@ -995,7 +995,7 @@ class QuickbooksController
 
     private function _createInventoryQuery()
     {
-        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$site.")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
         $query = $this->_qb->request->AppendItemInventoryQueryRq();
 

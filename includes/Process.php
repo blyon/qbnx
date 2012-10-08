@@ -319,7 +319,7 @@ function pushInventoryToNexternal()
         return false;
     }
 
-    $qbInventory = $quickbooks->getInventoryBySite("Main");
+    $qbInventory = $quickbooks->getInventory("Main");
     // Check for Cache before sending inventory to QB.
     if (file_exists(CACHE_DIR . QUICKBOOKS_INV_CACHE . CACHE_EXT)) {
         // Save inventory to cache and process cache.
@@ -334,7 +334,9 @@ function pushInventoryToNexternal()
     } else {
         $result = _pushInventoryToNexternal($qbInventory, $nexternal, $quickbooks);
         $totalInventory = $result['sentInventory'];
-        $errors += $result['errors'];
+        if (!empty($respinse['errors'])) {
+            $errors += $result['errors'];
+        }
     }
     printf("Total Inventory Items Sent to NX: %d\n", count($totalInventory));
 
