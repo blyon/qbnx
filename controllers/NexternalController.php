@@ -1130,11 +1130,11 @@ class NexternalController
         $this->_nx->dom->addChild('ForceProceed');
 
         foreach ($inventory as $i) {
-            $this->_nx->dom->addChild('InventoryUpdate');
+            $iu = $this->_nx->dom->addChild('InventoryUpdate');
 
-            $this->_nx->dom->InventoryUpdate->addAttribute('Mode', 'Update');
-            $this->_nx->dom->InventoryUpdate->addChild('ProductSKU', $i['sku']);
-            $this->_nx->dom->InventoryUpdate->addChild('Inventory', $i['qty']);
+            $iu->addAttribute('Mode', 'Update');
+            $iu->addChild('ProductSKU', $i['sku']);
+            $iu->addChild('Inventory', $i['qty']);
         }
 
         // Send XML to Nexternal and return response.
