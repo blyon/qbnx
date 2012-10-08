@@ -10,9 +10,11 @@ class Log
     const CATEGORY_QB_SUCCESS   = 100;
     const CATEGORY_QB_ORDER     = 110;
     const CATEGORY_QB_CUSTOMER  = 111;
+    const CATEGORY_NX_INVENTORY = 112;
     const CATEGORY_NX_SUCCESS   = 200;
     const CATEGORY_NX_ORDER     = 210;
     const CATEGORY_NX_CUSTOMER  = 211;
+    const CATEGORY_NX_INVENTORY = 212;
 
     const EMERG         = 0;
     const ALERT         = 1;

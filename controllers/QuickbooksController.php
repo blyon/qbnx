@@ -181,10 +181,10 @@ class QuickbooksController
     }
 
 
-    public function getInventoryBySite($site)
+    public function getInventory()
     {
         return $this->_processInventoryQueryResponse(
-            $this->_createInventoryQuery($site)
+            $this->_createInventoryQuery()
         );
     }
 
@@ -993,14 +993,14 @@ class QuickbooksController
     }
 
 
-    private function _createInventoryQuery($site)
+    private function _createInventoryQuery()
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$site.")");
 
         $query = $this->_qb->request->AppendItemInventoryQueryRq();
 
-        $query->ORListQuery->ListFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(2);
-        $query->ORListQuery->ListFilter->ORNameFilter->NameFilter->Name->setValue($site);
+        //$query->ORListQuery->ListFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(2);
+        //$query->ORListQuery->ListFilter->ORNameFilter->NameFilter->Name->setValue($site);
 
         return $this->_qb->sendRequest();
     }
@@ -1027,7 +1027,7 @@ class QuickbooksController
                 $d = $details->GetAt($n);
                 array_push($items, array(
                     'sku'   => $this->_getValue($d, 'FullName'),
-                    'qty'   => $this->_getValue($d, 'QuantityOnHand'),
+                    'qty'   => (int) $this->_getValue($d, 'QuantityOnHand'),
                     //'qty'   => $this->_getValue($d, 'QuantityOnOrder'),
                     //'qty'   => $this->_getValue($d, 'QuantityOnSalesOrder'),
                 ));

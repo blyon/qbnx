@@ -340,6 +340,12 @@ class NexternalController
     }
 
 
+    public function updateInventory($inventory)
+    {
+        return $this->_processInventoryUpdateResponse($this->_updateInventory($inventory));
+    }
+
+
     /**
      * Send Authentication Request to Nexternal.
      *
@@ -1113,4 +1119,52 @@ class NexternalController
         return $return;
     }
 
+
+
+    private function _updateInventory($inventory)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".count($inventory).")");
+
+        // Initialize DOM {@see _addCredentials}.
+        $this->_nx->initDom('<InventoryUpdateRequest/>');
+        $this->_nx->dom->addChild('ForceProceed');
+
+        foreach ($inventory as $i) {
+            $this->_nx->dom->addChild('InventoryUpdate');
+
+            $this->_nx->dom->InventoryUpdate->addAttribute('Mode', 'Update');
+            $this->_nx->dom->InventoryUpdate->addChild('ProductSKU', $i['sku']);
+            $this->_nx->dom->InventoryUpdate->addChild('Inventory', $i['qty']);
+        }
+
+        // Send XML to Nexternal and return response.
+        return $this->_nx->sendDom('inventoryupdate.rest', true);
+    }
+
+
+    private function _processInventoryUpdateResponse($dom)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+
+        $return = array(
+            'items' => array(),
+            'errors' => '',
+        );
+
+        // Check for Error.
+        foreach ($dom->children() as $child) {
+            if ($child->getName() == 'Error') {
+                $return['errors'] = $child->xpath("ErrorDescription");
+            } elseif ($child->getName() == 'InventoryProduct') {
+                foreach ($child->children() as $item) {
+                    array_push($return['items'], array(
+                        'sku' => (string) $item->ProductSKU,
+                        'qty' => (int) $item->Inventory,
+                    ));
+                }
+            }
+        }
+
+        return $return;
+    }
 }
