@@ -802,7 +802,7 @@ class QuickbooksController
         }
         if (!empty($addrString)) {
             $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue(       $addrString);
+            $request->BillAddress->$addr->setValue(       substr($addrString,0,41));
             $x++;
         }
         $addr = "Addr".$x;$x++;
@@ -832,7 +832,7 @@ class QuickbooksController
             }
             if (!empty($addrString)) {
                 $addr = "Addr".$x;
-                $request->ShipAddress->$addr->setValue(   $addrString);
+                $request->ShipAddress->$addr->setValue(   substr($addrString,0,41));
                 $x++;
             }
             $addr = "Addr".$x;$x++;
