@@ -181,6 +181,14 @@ class QuickbooksController
     }
 
 
+    public function getInventoryBySite($site)
+    {
+        return $this->_processInventoryQueryResponse(
+            $this->_createInventoryQuery($site)
+        );
+    }
+
+
     private function _createCustomerQuery($listId)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$listId.")");
@@ -820,7 +828,7 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(    self::GIFTCERT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                 $gc['code']);
             $lineItem->SalesReceiptLineAdd->Amount->setValue(               $gc['amount']);
-            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("No");
+            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("Tax");
         }
 
         // Discounts.
@@ -829,7 +837,7 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   self::DISCOUNT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                implode(" ", array($discount['type'],$discount['name'])));
             $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount['value']);
-            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("No");
+            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("Tax");
         }
 
         // Shipping Cost.
@@ -982,6 +990,51 @@ class QuickbooksController
         }
 
         return $response->ResponseList->GetAt(0)->Detail->RefNumber->getValue;
+    }
+
+
+    private function _createInventoryQuery($site)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$site.")");
+
+        $query = $this->_qb->request->AppendItemInventoryQueryRq();
+
+        $query->ORListQuery->ListFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(2);
+        $query->ORListQuery->ListFilter->ORNameFilter->NameFilter->Name->setValue($site);
+
+        return $this->_qb->sendRequest();
+    }
+
+
+    private function _processInventoryQueryResponse($response)
+    {
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+
+        if (!$response->ResponseList->Count) {
+            $this->log->write(Log::ERROR, "Failed to retrieve InvetoryQuery Response.");
+            return false;
+        }
+        if (0 != $response->ResponseList->GetAt(0)->StatusCode) {
+            $this->log->write(Log::NOTICE, "Error retrieving Inventory");
+            $this->log->write(Log::NOTICE, "Response From Quicbooks: " . $response->ResponseList->GetAt(0)->StatusMessage);
+            return false;
+        }
+
+        $items = array();
+        for ($i=0; $i<$response->ResponseList->Count; $i++) {
+            $details = &$response->ResponseList->GetAt($i)->Detail;
+            for ($n=0; $n<$details->Count; $n++) {
+                $d = $details->GetAt($n);
+                array_push($items, array(
+                    'sku'   => $this->_getValue($d, 'FullName'),
+                    'qty'   => $this->_getValue($d, 'QuantityOnHand'),
+                    //'qty'   => $this->_getValue($d, 'QuantityOnOrder'),
+                    //'qty'   => $this->_getValue($d, 'QuantityOnSalesOrder'),
+                ));
+            }
+        }
+
+        return $items;
     }
 
 
