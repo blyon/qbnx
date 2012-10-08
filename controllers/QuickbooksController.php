@@ -675,21 +675,59 @@ class QuickbooksController
             $request->Phone->setValue                   ($customer->phone);
         }
 
-        $request->BillAddress->Addr1->setValue          ($order->billingAddress['address']);
-        $request->BillAddress->Addr2->setValue          ($order->billingAddress['address2']);
-        $request->BillAddress->City->setValue           ($order->billingAddress['city']);
-        $request->BillAddress->State->setValue          ($order->billingAddress['state']);
-        $request->BillAddress->PostalCode->setValue     ($order->billingAddress['zip']);
-        $request->BillAddress->Country->setValue        ($order->billingAddress['country']);
-        $request->BillAddress->Note->setValue           ($order->billingAddress['phone']);
+        // Billing Address.
+        $x=1;
+        $addrString = "";
+        if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
+            $addrString = sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']);
+        }
+        if (isset($order->billingAddress['company'])) {
+            if (!empty($addrString)) {
+                $addrString .= " | ";
+            }
+            $addrString .= $order->billingAddress['company'];
+        }
+        if (!empty($addrString)) {
+            $addr = "Addr".$x;
+            $request->BillAddress->$addr->setValue(         $addrString);
+            $x++;
+        }
+        $addr = "Addr".$x;$x++;
+        $request->BillAddress->$addr->setValue(             $order->billingAddress['address']);
+        $addr = "Addr".$x;$x++;
+        $request->BillAddress->$addr->setValue(             $order->billingAddress['address2']);
+        $request->BillAddress->City->setValue(              $order->billingAddress['city']);
+        $request->BillAddress->State->setValue(             $order->billingAddress['state']);
+        $request->BillAddress->PostalCode->setValue(        $order->billingAddress['zip']);
+        $request->BillAddress->Country->setValue(           $order->billingAddress['country']);
+        $request->BillAddress->Note->setValue(              $order->billingAddress['phone']);
 
-        $request->ShipAddress->Addr1->setValue          ($order->shippingAddress['address']);
-        $request->ShipAddress->Addr2->setValue          ($order->shippingAddress['address2']);
-        $request->ShipAddress->City->setValue           ($order->shippingAddress['city']);
-        $request->ShipAddress->State->setValue          ($order->shippingAddress['state']);
-        $request->ShipAddress->PostalCode->setValue     ($order->shippingAddress['zip']);
-        $request->ShipAddress->Country->setValue        ($order->shippingAddress['country']);
-        $request->ShipAddress->Note->setValue           ($order->shippingAddress['phone']);
+        // Shipping Address.
+        $x=1;
+        $addrString = "";
+        if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
+            $addrString = sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']);
+        }
+        if (isset($order->shippingAddress['company'])) {
+            if (!empty($addrString)) {
+                $addrString .= " | ";
+            }
+            $addrString .= $order->shippingAddress['company'];
+        }
+        if (!empty($addrString)) {
+            $addr = "Addr".$x;
+            $request->ShipAddress->$addr->setValue(     $addrString);
+            $x++;
+        }
+        $addr = "Addr".$x;$x++;
+        $request->ShipAddress->$addr->setValue(         $order->shippingAddress['address']);
+        $addr = "Addr".$x;$x++;
+        $request->ShipAddress->$addr->setValue(         $order->shippingAddress['address2']);
+        $request->ShipAddress->City->setValue(          $order->shippingAddress['city']);
+        $request->ShipAddress->State->setValue(         $order->shippingAddress['state']);
+        $request->ShipAddress->PostalCode->setValue(    $order->shippingAddress['zip']);
+        $request->ShipAddress->Country->setValue(       $order->shippingAddress['country']);
+        $request->ShipAddress->Note->setValue(          $order->shippingAddress['phone']);
 
         // Credit Card.
         if ($order->paymentMethod['type'] == "Credit Card") {
