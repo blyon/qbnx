@@ -301,7 +301,7 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
 function pushInventoryToNexternal()
 {
     $totalInventory = array();
-    $errors = 0;
+    $errors = array();
 
     // Connect to Nexternal.
     $nexternal = new NexternalController();
@@ -334,20 +334,22 @@ function pushInventoryToNexternal()
     } else {
         $result = _pushInventoryToNexternal($qbInventory, $nexternal, $quickbooks);
         $totalInventory = $result['sentInventory'];
-        if (!empty($result['errors'])) {
-            $errors += $result['errors'];
-        }
+        $errors += $result['errors'];
     }
     printf("Total Inventory Items Sent to NX: %d\n", count($totalInventory));
 
     // Send Email
-    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nSync Inventory\nTotal Items Sent to NX: %d\n\n\nItems:\n\t%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), count($totalInventory), implode("\n\t", $totalInventory));
+    $formattedItems = array();
+    foreach ($totalInventory as $ti) {
+        array_push($formattedItems, sprintf("%s: %s", $ti['sku'], $ti['qty']));
+    }
+    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nSync Inventory\nTotal Items Sent to NX: %d\n\n\nItems:\n\t%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), count($totalInventory), implode("\n\t", $formattedItems));
     if (!empty($errors)) {
         $log = Log::getInstance();
-        $log->sendMail(/*MAIL_ERRORS*/"brandon@lyonaround.com", "ERROR Report for Inventory (QB->NX)", "The following errors occurred while pushing Inventory from Quickbooks to Nexternal.\n\n\n");
+        $log->sendMail(MAIL_ERRORS, "ERROR Report for Inventory (QB->NX)", "The following errors occurred while pushing Inventory from Quickbooks to Nexternal.\n\n\n");
         $log->clearMail();
     }
-    Util::sendMail(/*MAIL_SUCCESS*/"brandon@lyonaround.com", "Order Report for ToeSox Inventory (QB->NX)", $message);
+    Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox Inventory (QB->NX)", $message);
 }
 
 
@@ -365,6 +367,7 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
     $sentItems = array();
 
     // Split the Inventory into arrays of 15 items.
+    // NOTICE: Leave it at 1 item so we can better troubleshoot errors.
     $itemGroup = (count($qbInventory) > 1)
         ? array_chunk($qbInventory, 1)
         : array($qbInventory);
@@ -375,14 +378,13 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
         $response = $nexternal->updateInventory($ig);
         if (!empty($response['errors'])) {
             $errors = array_merge($errors, $response['errors']);
+            foreach ($response['errors'] as $e) {
+                $msg = sprintf("[ITEM: %s] %s", $ig['sku'], $e);
+                $log->mail($msg, Log::CATEGORY_NX_INVENTORY);
+                $log->write($log::ERROR, $msg);
+            }
         }
         $sentItems = array_merge($sentItems, $response['items']);
-    }
-
-    foreach ($errors as $e) {
-        $msg = sprintf("[INVENTORY] %s", $e);
-        $log->mail($msg, Log::CATEGORY_NX_INVENTORY);
-        $log->write($log::ERROR, $msg);
     }
 
     return array('sentInventory' => $sentItems, 'errors' => $errors);
