@@ -1134,7 +1134,7 @@ class NexternalController
 
             $iu->addAttribute('Mode', 'Update');
             $iu->addChild('ProductSKU', $i['sku']);
-            $iu->addChild('Inventory', $i['qty']);
+            $iu->addChild('Inventory', $i['qty'] ?: 0);
         }
 
         // Send XML to Nexternal and return response.
