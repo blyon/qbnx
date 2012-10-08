@@ -632,22 +632,26 @@ class NexternalController
                 }
 
                 // Add Product(s).
-                if (isset($order->ShipTo->ShipFrom->LineItem)) {
-                    foreach ($order->ShipTo->ShipFrom->LineItem as $lineItem) {
-                        // Skip if no SKU.
-                        if ("" == (string) $lineItem->LineProduct->ProductSKU) {
-                            $this->log->write(Log::WARN,
-                                sprintf("Skipping Product [%s: %s] No SKU", $lineItem->LineProduct->ProductNo, $lineItem->LineProduct->ProductName)
-                            );
-                            continue;
+                foreach ($order->ShipTo as $shipTo) {
+                    foreach ($shipTo->ShipFrom as $shipFrom) {
+                        if (isset($shipFrom->LineItem)) {
+                            foreach ($shipFrom->LineItem as $lineItem) {
+                                // Skip if no SKU.
+                                if ("" == (string) $lineItem->LineProduct->ProductSKU) {
+                                    $this->log->write(Log::WARN,
+                                        sprintf("Skipping Product [%s: %s] No SKU", $lineItem->LineProduct->ProductNo, $lineItem->LineProduct->ProductName)
+                                    );
+                                    continue;
+                                }
+                                $o->products[] = array(
+                                    'sku'       => (string) $lineItem->LineProduct->ProductSKU,
+                                    'name'      => (string) $lineItem->LineProduct->ProductName,
+                                    'qty'       => (string) $lineItem->Quantity,
+                                    'price'     => (string) $lineItem->ExtPrice,
+                                    'tracking'  => (string) $lineItem->TrackingNumber,
+                                );
+                            }
                         }
-                        $o->products[] = array(
-                            'sku'       => (string) $lineItem->LineProduct->ProductSKU,
-                            'name'      => (string) $lineItem->LineProduct->ProductName,
-                            'qty'       => (string) $lineItem->Quantity,
-                            'price'     => (string) $lineItem->ExtPrice,
-                            'tracking'  => (string) $lineItem->TrackingNumber,
-                        );
                     }
                 }
 
