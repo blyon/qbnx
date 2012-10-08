@@ -160,6 +160,12 @@ class Log
                 case self::CATEGORY_NX_SUCCESS:
                     $body .= "\n--- NEXTERNAL SUCCESS ---\n";
                     break;
+                case self::CATEGORY_QB_INVENTORY:
+                    $body .= "\n--- QUICKBOOKS INVENTORY ---\n";
+                    break;
+                case self::CATEGORY_NX_INVENTORY:
+                    $body .= "\n--- NEXTERNAL INVENTORY ---\n";
+                    break;
             }
             $body .= implode("\n", $messages);
         }

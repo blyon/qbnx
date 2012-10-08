@@ -1127,7 +1127,7 @@ class NexternalController
 
         // Initialize DOM {@see _addCredentials}.
         $this->_nx->initDom('<InventoryUpdateRequest/>');
-        $this->_nx->dom->addChild('ForceProceed');
+        //$this->_nx->dom->addChild('ForceProceed');
 
         foreach ($inventory as $i) {
             $iu = $this->_nx->dom->addChild('InventoryUpdate');

@@ -342,12 +342,12 @@ function pushInventoryToNexternal()
 
     // Send Email
     //$message = sprintf("Start Time: %s\nEnd Time: %s\n\nSync Inventory From: %s To %s\n\nTotal Items Sent to NX: %d\n\n\nItems:\n\t%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), date('Y-m-d H:i:s', $from), date('Y-m-d H:i:s', $to), count($totalInventory), implode("\n\t", $totalInventory));
+    $log = Log::getInstance();
     if (!empty($errors)) {
-        $log = Log::getInstance();
         //$log->sendMail(MAIL_ERRORS, "ERROR Report for Inventory (QB->NX)", "The following errors occurred while pushing Inventory from Quickbooks to Nexternal.\n\n\n");
         $log->clearMail();
     }
-    $log->sendMail("brandon@lyonaround.com", "Inventory Test", CATEGORY_NX_INVENTORY);
+    $log->sendMail("brandon@lyonaround.com", "Inventory Test", LOG::CATEGORY_NX_INVENTORY);
     //Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox Inventory (QB->NX)", $message);
 }
 
