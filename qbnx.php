@@ -14,6 +14,7 @@
  *   -h     Help Menu
  *   -q     Push data to Quickbooks from Nexternal
  *   -n     Push data to Nexternal from Quickbooks
+ *   -i     Push inventory to Nexternal from Quickbooks
  *   -t     Define duration of Time to sync:
  *           day, week, month, or time in seconds.
  *
@@ -32,6 +33,7 @@ $args = array(
     'h' => false,   // Show Help.
     'q' => false,   // Push data to QuickBooks.
     'n' => false,   // Push data to Nexternal.
+    'i' => false,   // Push inventory to Nexternal.
     't' => 'week',  // Time duration of data to push.
     'u' => false,   // Update Script.
 );
@@ -42,7 +44,7 @@ Util::parseArgs($args);
 
 // Check for required args, help, and valid time.
 if ($args['h']
-    || (!$args['q'] && !$args['n'] && !$args['u'])
+    || (!$args['q'] && !$args['n'] && !$args['u'] && !$args['i'])
     || !Util::validateTime($args['t'])
 ) {
     Util::showHelp();
@@ -66,7 +68,6 @@ try {
         );
     }
 
-
     // Check for Nexternal Argument.
     if ($args['n']) {
         pushQuickbooksToNexternal(
@@ -74,6 +75,11 @@ try {
             START_TIME,
             true
         );
+    }
+
+    // Check for Inventory Argument.
+    if ($args['i']) {
+        pushInventoryToNexternal();
     }
 } catch (Exception $e) {
     $log = Log::getInstance();

@@ -291,3 +291,91 @@ function _pushQuickbooksToNexternal(&$qbOrders, &$qbCustomers, &$nexternal, &$qu
     }
     return array('sentOrders' => $sentOrders, 'errors' => $errors);
 }
+
+
+/**
+ * Push current Inventory from Quickbooks to Nexternal.
+ *
+ * @return boolean
+ */
+function pushInventoryToNexternal()
+{
+    $totalInventory = array();
+    $errors = 0;
+
+    // Connect to Nexternal.
+    $nexternal = new NexternalController();
+
+    // Authenticate with Nexternal.
+    if (!$nexternal->authenticate()) {
+        throw new Exception("Nexternal Authentication Failed.");
+    }
+
+    // Connect to Quickbooks.
+    $quickbooks = new QuickbooksController();
+
+    // Check for failed auth.
+    if (!$nexternal || !$quickbooks) {
+        return false;
+    }
+
+    $qbInventory = $quickbooks->getInventoryBySite("Main");
+    // Check for Cache before sending inventory to QB.
+    if (file_exists(CACHE_DIR . QUICKBOOKS_INV_CACHE . CACHE_EXT)) {
+        // Save inventory to cache and process cache.
+        Util::writeCache(QUICKBOOKS_INV_CACHE, serialize($qbInventory));
+        while (null !== ($cacheInventory = Util::readCache(QUICKBOOKS_INV_CACHE))) {
+            $qbInventory = unserialize($cacheInventory);
+            unset($cacheInventory);
+            $result = _pushInventoryToNexternal($qbInventory, $nexternal, $quickbooks);
+            $totalInventory = array_merge($totalInventory, $result['sentInventory']);
+            $errors += $result['errors'];
+        }
+    } else {
+        $result = _pushInventoryToNexternal($qbInventory, $nexternal, $quickbooks);
+        $totalInventory = $result['sentInventory'];
+        $errors += $result['errors'];
+    }
+    printf("Total Inventory Items Sent to NX: %d\n", count($totalInventory));
+
+    // Send Email
+    $message = sprintf("Start Time: %s\nEnd Time: %s\n\nSync Inventory From: %s To %s\n\nTotal Items Sent to NX: %d\n\n\nItems:\n\t%s", date('Y-m-d H:i:s', START_TIME), date('Y-m-d H:i:s'), date('Y-m-d H:i:s', $from), date('Y-m-d H:i:s', $to), count($totalInventory), implode("\n\t", $totalInventory));
+    if (!empty($errors)) {
+        $log = Log::getInstance();
+        //$log->sendMail(MAIL_ERRORS, "ERROR Report for Inventory (QB->NX)", "The following errors occurred while pushing Inventory from Quickbooks to Nexternal.\n\n\n");
+        $log->clearMail();
+    }
+    Util::sendMail("brandon@lyonaround.com", "Inventory Test", print_r($totalInventory,true));
+    //Util::sendMail(MAIL_SUCCESS, "Order Report for ToeSox Inventory (QB->NX)", $message);
+}
+
+
+/**
+ * Helper function for pushQuickbooksToNexternal to prevent code duplication.
+ *
+ * @param type $qbInventory
+ * @param type $nexternal
+ * @param type $quickbooks
+ * @return type
+ */
+function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
+    $log        = Log::getInstance();
+    $errors     = 0;
+    $sentItenms = array();
+
+    print "Send inventory to Nexternal\n";
+    foreach ($qbInventory as $qbItem) {
+        // Update Inventory.
+        /*if (false !== ($oid = $nexternal->updateInventory($qbItem, $qb_customer))) {
+            $sentOrders[] = $oid;
+        } else {
+            $errors++;
+            $msg = sprintf("[ORDER %s] Failed to migrate Order to Nexternal.", $qbOrder->id);
+            $log->mail($msg, Log::CATEGORY_NX_ORDER);
+            $log->write($log::ERROR, $msg);
+            continue;
+        }
+         */
+    }
+    return array('sentInventory' => $sentItems, 'errors' => $errors);
+}
