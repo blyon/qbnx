@@ -181,10 +181,10 @@ class QuickbooksController
     }
 
 
-    public function getInventory()
+    public function getInventory($site)
     {
         return $this->_processInventoryQueryResponse(
-            $this->_createInventoryQuery()
+            $this->_createInventoryQuery($site)
         );
     }
 
@@ -1048,13 +1048,13 @@ class QuickbooksController
     }
 
 
-    private function _createInventoryQuery()
+    private function _createInventoryQuery($site)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
         $query = $this->_qb->request->AppendItemSitesQueryRq();
 
-        $query->ORItemSitesQuery->ItemSitesFilter->ORItemSitesFilter->SiteFilter->ORSiteFilter->FullNameList->setValue($site);
+        $query->ORItemSitesQuery->ItemSitesFilter->ORItemSitesFilter->ItemSiteFilter->SiteFilter->ORSiteFilter->FullNameList->setValue($site);
 
         return $this->_qb->sendRequest();
     }
