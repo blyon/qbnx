@@ -101,19 +101,11 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$qu
         $order_check = $quickbooks->getSalesReceiptByOrderId($nxOrder->id);
         if (empty($order_check)) {
 
-            // If the Type is Consumer, then check the shipTo State.
-            // If the State is not CA then use customer F
-            // If the state is CA, then use/create a customer based on the Zip
-            // code and apply the tax rate of this order to that customer.
-            // If the Type is NOT Consumer... search for customer by quickbooks ID > email > name
-            // If a customer is still not found then create it, if there was a error then dont send order
-            // If a customer was found then lets send the order over
-
             // Attempt to lookup the Customer.
             $customer = ('consumer' == strtolower($nx_customer->type)
-                ? (strtoupper($nxOrder->shippingAddress['state']) != "CA"
-                    ? $quickbooks->getCustomerbyName('f')
-                    : $quickbooks->getCustomerbyName("CA-".$nxOrder->shippingAddress['zip']))
+                ? (strtoupper($nxOrder->shippingAddress['state']) == "CA"
+                    ? $quickbooks->getCustomerbyName('NX RT CALIFORNIA')
+                    : $quickbooks->getCustomerbyName('NX RT NON-TAXABLE'))
                 : (!empty($nx_customer->quickbooksId)
                     ? $quickbooks->getCustomer($nx_customer->quickbooksId)
                     : $quickbooks->getCustomerByName($nx_customer->company
@@ -122,22 +114,7 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$qu
             );
             // Create the Customer if Customer not found.
             if (!$customer) {
-                if ("consumer" == strtolower($nx_customer->type) && strtoupper($nxOrder->shippingAddress['state']) == "CA") {
-                    $tmpCustomer = new Customer;
-                    $tmpCustomer->company   = "California Company " . $nxOrder->shippingAddress['zip'];
-                    $tmpCustomer->type      = "consumer";
-                    $tmpCustomer->email     = "no-reply@toesox.com";
-                    $tmpCustomer->phone     = "555-555-5555";
-                    $tmpCustomer->lastName  = "California";
-                    $tmpCustomer->firstName = $nxOrder->shippingAddress['zip'];
-                    if (!($customer = $quickbooks->createCustomer($tmpCustomer,$nxOrder))) {
-                        $msg = sprintf("[ORDER %s] Could not create California Customer [%s] for Order. %s", $nxOrder->id, $nxOrder->shippingAddress['zip'], $quickbooks->last_error);
-                        $log->mail($msg, Log::CATEGORY_QB_CUSTOMER);
-                        $log->write(Log::ERROR, $msg);
-                        continue;
-                    }
-                }
-                elseif (!($customer = $quickbooks->createCustomer($nx_customer,$nxOrder))) {
+                if (!($customer = $quickbooks->createCustomer($nx_customer,$nxOrder))) {
                     $msg = "[ORDER ".$nxOrder->id."] Could not create customer [".$nx_customer->type."] for Order. " . $quickbooks->last_error;
                     $log->mail($msg, Log::CATEGORY_QB_CUSTOMER);
                     $log->write(Log::ERROR, $msg);
