@@ -691,19 +691,14 @@ class QuickbooksController
 
         // Billing Address.
         $x=1;
-        $addrString = "";
         if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
-            $addrString = sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']);
+            $addr = "Addr".$x;
+            $request->BillAddress->$addr->setValue(sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']));
+            $x++;
         }
         if (!empty($order->billingAddress['company'])) {
-            if (!empty($addrString)) {
-                $addrString .= " | ";
-            }
-            $addrString .= $order->billingAddress['company'];
-        }
-        if (!empty($addrString)) {
             $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue(         substr($addrString,0,41));
+            $request->BillAddress->$addr->setValue($order->billingAddress['company']);
             $x++;
         }
         $addr = "Addr".$x;$x++;
@@ -718,19 +713,14 @@ class QuickbooksController
 
         // Shipping Address.
         $x=1;
-        $addrString = "";
         if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
-            $addrString = sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']);
+            $addr = "Addr".$x;
+            $request->ShipAddress->$addr->setValue(sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']));
+            $x++;
         }
         if (!empty($order->shippingAddress['company'])) {
-            if (!empty($addrString)) {
-                $addrString .= " | ";
-            }
-            $addrString .= $order->shippingAddress['company'];
-        }
-        if (!empty($addrString)) {
             $addr = "Addr".$x;
-            $request->ShipAddress->$addr->setValue(     substr($addrString,0,41));
+            $request->ShipAddress->$addr->setValue($order->billingAddress['company']);
             $x++;
         }
         $addr = "Addr".$x;$x++;
@@ -807,19 +797,14 @@ class QuickbooksController
 
         // Billing Address.
         $x=1;
-        $addrString = "";
         if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
-            $addrString = sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']);
+            $addr = "Addr".$x;
+            $request->BillAddress->$addr->setValue(sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']));
+            $x++;
         }
         if (!empty($order->billingAddress['company'])) {
-            if (!empty($addrString)) {
-                $addrString .= " | ";
-            }
-            $addrString .= $order->billingAddress['company'];
-        }
-        if (!empty($addrString)) {
             $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue(       substr($addrString,0,41));
+            $request->BillAddress->$addr->setValue($order->billingAddress['company']);
             $x++;
         }
         $addr = "Addr".$x;$x++;
@@ -837,19 +822,14 @@ class QuickbooksController
         // Shipping Address.
         if (!empty($order->shippingAddress)) {
             $x=1;
-            $addrString = "";
             if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
-                $addrString = sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']);
+                $addr = "Addr".$x;
+                $request->ShipAddress->$addr->setValue(sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']));
+                $x++;
             }
             if (!empty($order->shippingAddress['company'])) {
-                if (!empty($addrString)) {
-                    $addrString .= " | ";
-                }
-                $addrString .= $order->shippingAddress['company'];
-            }
-            if (!empty($addrString)) {
                 $addr = "Addr".$x;
-                $request->ShipAddress->$addr->setValue(   substr($addrString,0,41));
+                $request->ShipAddress->$addr->setValue($order->billingAddress['company']);
                 $x++;
             }
             $addr = "Addr".$x;$x++;
