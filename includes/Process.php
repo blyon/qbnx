@@ -386,15 +386,17 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
     $errors     = array();
     $sentItems = array();
 
-    // Split the Inventory into arrays of 15 items.
-    // NOTICE: Leave it at 1 item so we can better troubleshoot errors.
-    $itemGroup = (count($qbInventory) > 1)
-        ? array_chunk($qbInventory, 1)
-        : array($qbInventory);
+    // Load Blacklist.
+    $blacklist = file(dirname(__FILE__) . '/INVENTORY_ITEM_BLACKLIST.txt', 'r');
 
     print "Send inventory to Nexternal\n";
     // Update Inventory.
-    foreach ($itemGroup as $ig) {
+    foreach ($qbInventory as $ig) {
+        // Skip Blacklisted Items.
+        if (in_array($ig['sku'], $blacklist)) {
+            continue;
+        }
+
         $response = $nexternal->updateInventory($ig);
         if (!empty($response['errors'])) {
             $errors = array_merge($errors, $response['errors']);
