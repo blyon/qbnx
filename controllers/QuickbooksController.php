@@ -184,7 +184,7 @@ class QuickbooksController
     public function getInventory()
     {
         return $this->_processInventoryQueryResponse(
-            $this->_createInventoryQuery()
+            $this->_createInventoryQuery('Main')
         );
     }
 
@@ -1048,14 +1048,14 @@ class QuickbooksController
     }
 
 
-    private function _createInventoryQuery()
+    private function _createInventoryQuery($site)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
-        $query = $this->_qb->request->AppendItemInventoryQueryRq();
+        $query = $this->_qb->request->AppendInventorySiteQueryRq();
 
-        //$query->ORListQuery->ListFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(2);
-        //$query->ORListQuery->ListFilter->ORNameFilter->NameFilter->Name->setValue($site);
+        $query->ORInventorySiteQuery->InvetorySiteFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(2);
+        $query->ORInventorySiteQuery->InventorySiteFilter->ORNameFilter->NameFilter->Name->setValue($site);
 
         return $this->_qb->sendRequest();
     }
@@ -1064,6 +1064,7 @@ class QuickbooksController
     private function _processInventoryQueryResponse($response)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
+        return array();
 
         if (!$response->ResponseList->Count) {
             $this->log->write(Log::ERROR, "Failed to retrieve InvetoryQuery Response.");
