@@ -640,7 +640,7 @@ class QuickbooksController
         $request = $this->_qb->request->AppendItemSalesTaxQueryRq();
         $request->ORListQuery->ListFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(0);
         $request->ORListQuery->ListFilter->ORNameFilter->NameFilter->Name->setValue($code);
-        $resp =  $this->_qb->sendRequest();
+        $resp = $this->_qb->sendRequest();
         if($resp->ResponseList->GetAt(0)->StatusCode == 1) {
             return FALSE;
         }
@@ -660,7 +660,6 @@ class QuickbooksController
     private function _createCustomer(Customer $customer,$order) {
 
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
-        $request = $this->_qb->request->AppendCustomerAddRq();
 
         // Query for Sales Tax.
         $code = '';
@@ -676,6 +675,7 @@ class QuickbooksController
         }
 
         // Build Customer
+        $request = $this->_qb->request->AppendCustomerAddRq();
         if ("consumer" == strtolower($customer->type)) {
             $request->Name->setValue                    ($customer->firstName.' '.$customer->lastName);
         } else {
