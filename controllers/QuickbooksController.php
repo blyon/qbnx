@@ -662,6 +662,20 @@ class QuickbooksController
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
         $request = $this->_qb->request->AppendCustomerAddRq();
 
+        // Query for Sales Tax.
+        $code = '';
+        $itemCode = "Tax";
+        if (!empty($order->taxRate)) {
+            $code = $this->_requestTaxItem($order->taxRate);
+            if ($code == false) {
+                $code = $this->_createSalesTax($order->taxRate);
+            }
+        } else {
+            $code = 'Out of State (' . strtoupper(self::TAXCODE_SUFFIX) . ')';
+            $itemCode = "No";
+        }
+
+        // Build Customer
         if ("consumer" == strtolower($customer->type)) {
             $request->Name->setValue                    ($customer->firstName.' '.$customer->lastName);
         } else {
@@ -728,6 +742,9 @@ class QuickbooksController
         $request->ShipAddress->PostalCode->setValue(    $order->shippingAddress['zip']);
         $request->ShipAddress->Country->setValue(       $order->shippingAddress['country']);
         //$request->ShipAddress->Note->setValue(          $order->shippingAddress['phone']);
+
+        // Tax Code.
+        $request->ItemSalesTaxRef->FullName->setValue($code);
 
         // Credit Card.
         if ($order->paymentMethod['type'] == "Credit Card") {
