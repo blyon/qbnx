@@ -1054,7 +1054,8 @@ class QuickbooksController
 
         $query = $this->_qb->request->AppendItemSitesQueryRq();
 
-        $query->ORItemSitesQuery->ItemSitesFilter->ORItemSitesFilter->ItemSiteFilter->SiteFilter->ORSiteFilter->FullNameList->setValue($site);
+        $query->IncludeRetElementList->add("QuantityOnHand");
+        $query->ORItemSitesQuery->ItemSitesFilter->ORItemSitesFilter->ItemSiteFilter->SiteFilter->ORSiteFilter->FullNameList->add($site);
 
         return $this->_qb->sendRequest();
     }
@@ -1075,8 +1076,8 @@ class QuickbooksController
         }
 
         $items = array();
-        for ($i=0; $i<$response->Detail->Count; $i++) {
-            $details = &$response->Detail->GetAt($i);
+        for ($i=0; $i<$response->ResponseList->GetAt(0)->Detail->Count; $i++) {
+            $details = $response->ResponseList->GetAt(0)->Detail->GetAt($i);
             $item = $details->ORItemAssemblyORInventory->ItemInventoryRef;
             array_push($items, array(
                 'sku'   => $this->_getValue($item, 'FullName'),
