@@ -1127,7 +1127,7 @@ class NexternalController
 
     private function _updateInventory($sku,$qty)
     {
-        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".count($inventory).")");
+        $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".$sku.",".$qty.")");
 
         // Initialize DOM {@see _addCredentials}.
         $this->_nx->initDom('<InventoryUpdateRequest/>');
