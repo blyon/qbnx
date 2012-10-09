@@ -128,17 +128,17 @@ function _pushNexternalToQuickbooks(&$nxOrders, &$nxCustomers, &$nexternal, &$qu
                     $tmpCustomer->type      = "consumer";
                     $tmpCustomer->email     = "no-reply@toesox.com";
                     $tmpCustomer->phone     = "555-555-5555";
-                    $tmpCustomer->lastName  = "No Name";
-                    $tmpCustomer->firstName = "No Name";
+                    $tmpCustomer->lastName  = "California";
+                    $tmpCustomer->firstName = $nxOrder->shippingAddress['zip'];
                     if (!($customer = $quickbooks->createCustomer($tmpCustomer,$nxOrder))) {
-                        $msg = sprintf("[ORDER %s] Could not create California Customer [%s] for Order. %s", $nxOrder->id, $nxOrder->shippingAddress['zip'], $quickbooks_last_error);
-                        $log->mail($msg, Log::CATGEGORY_QB_CUSTOMER);
+                        $msg = sprintf("[ORDER %s] Could not create California Customer [%s] for Order. %s", $nxOrder->id, $nxOrder->shippingAddress['zip'], $quickbooks->last_error);
+                        $log->mail($msg, Log::CATEGORY_QB_CUSTOMER);
                         $log->write(Log::ERROR, $msg);
                         continue;
                     }
                 }
-                if (!($customer = $quickbooks->createCustomer($nx_customer,$nxOrder))) {
-                    $msg = "[ORDER ".$nxOrder->id."] Could not create customer [".$nx_customer->type."] for Order. " . $quickbooks_last_error;
+                elseif (!($customer = $quickbooks->createCustomer($nx_customer,$nxOrder))) {
+                    $msg = "[ORDER ".$nxOrder->id."] Could not create customer [".$nx_customer->type."] for Order. " . $quickbooks->last_error;
                     $log->mail($msg, Log::CATEGORY_QB_CUSTOMER);
                     $log->write(Log::ERROR, $msg);
                     $errors++;

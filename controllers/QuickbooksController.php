@@ -681,7 +681,7 @@ class QuickbooksController
         if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
             $addrString = sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']);
         }
-        if (isset($order->billingAddress['company'])) {
+        if (!empty($order->billingAddress['company'])) {
             if (!empty($addrString)) {
                 $addrString .= " | ";
             }
@@ -700,7 +700,7 @@ class QuickbooksController
         $request->BillAddress->State->setValue(             $order->billingAddress['state']);
         $request->BillAddress->PostalCode->setValue(        $order->billingAddress['zip']);
         $request->BillAddress->Country->setValue(           $order->billingAddress['country']);
-        $request->BillAddress->Note->setValue(              $order->billingAddress['phone']);
+        //$request->BillAddress->Note->setValue(              $order->billingAddress['phone']);
 
         // Shipping Address.
         $x=1;
@@ -708,7 +708,7 @@ class QuickbooksController
         if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
             $addrString = sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']);
         }
-        if (isset($order->shippingAddress['company'])) {
+        if (!empty($order->shippingAddress['company'])) {
             if (!empty($addrString)) {
                 $addrString .= " | ";
             }
@@ -727,7 +727,7 @@ class QuickbooksController
         $request->ShipAddress->State->setValue(         $order->shippingAddress['state']);
         $request->ShipAddress->PostalCode->setValue(    $order->shippingAddress['zip']);
         $request->ShipAddress->Country->setValue(       $order->shippingAddress['country']);
-        $request->ShipAddress->Note->setValue(          $order->shippingAddress['phone']);
+        //$request->ShipAddress->Note->setValue(          $order->shippingAddress['phone']);
 
         // Credit Card.
         if ($order->paymentMethod['type'] == "Credit Card") {
@@ -794,7 +794,7 @@ class QuickbooksController
         if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
             $addrString = sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']);
         }
-        if (isset($order->billingAddress['company'])) {
+        if (!empty($order->billingAddress['company'])) {
             if (!empty($addrString)) {
                 $addrString .= " | ";
             }
@@ -824,7 +824,7 @@ class QuickbooksController
             if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
                 $addrString = sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']);
             }
-            if (isset($order->shippingAddress['company'])) {
+            if (!empty($order->shippingAddress['company'])) {
                 if (!empty($addrString)) {
                     $addrString .= " | ";
                 }
