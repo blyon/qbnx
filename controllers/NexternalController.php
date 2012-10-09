@@ -340,9 +340,9 @@ class NexternalController
     }
 
 
-    public function updateInventory($inventory)
+    public function updateInventory($sku,$qty)
     {
-        return $this->_processInventoryUpdateResponse($this->_updateInventory($inventory));
+        return $this->_processInventoryUpdateResponse($this->_updateInventory($sku,$qty));
     }
 
 
@@ -1125,7 +1125,7 @@ class NexternalController
 
 
 
-    private function _updateInventory($inventory)
+    private function _updateInventory($sku,$qty)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__."(".count($inventory).")");
 
@@ -1133,13 +1133,11 @@ class NexternalController
         $this->_nx->initDom('<InventoryUpdateRequest/>');
         //$this->_nx->dom->addChild('ForceProceed');
 
-        foreach ($inventory as $i) {
-            $iu = $this->_nx->dom->addChild('InventoryUpdate');
+        $iu = $this->_nx->dom->addChild('InventoryUpdate');
 
-            $iu->addAttribute('Mode', 'Update');
-            $iu->addChild('ProductSKU', $i['sku']);
-            $iu->addChild('Inventory', $i['qty']);
-        }
+        $iu->addAttribute('Mode', 'Update');
+        $iu->addChild('ProductSKU', $sku);
+        $iu->addChild('Inventory', $qty);
 
         // Send XML to Nexternal and return response.
         return $this->_nx->sendDom('inventoryupdate.rest', true);

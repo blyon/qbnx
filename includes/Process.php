@@ -326,12 +326,12 @@ function pushInventoryToNexternal()
             unset($cacheInventory);
             $result = _pushInventoryToNexternal($qbInventory, $nexternal, $quickbooks);
             $totalInventory = array_merge($totalInventory, $result['sentInventory']);
-            $errors += $result['errors'];
+            $errors = array_merge($errors, $result['errors']);
         }
     } else {
         $result = _pushInventoryToNexternal($qbInventory, $nexternal, $quickbooks);
         $totalInventory = $result['sentInventory'];
-        $errors += $result['errors'];
+        $errors = $result['errors'];
     }
     printf("Total Inventory Items Sent to NX: %d\n", count($totalInventory));
 
@@ -364,7 +364,7 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
     $sentItems = array();
 
     // Load Blacklist.
-    $blacklist = file(dirname(__FILE__) . '/INVENTORY_ITEM_BLACKLIST.txt', 'r');
+    $blacklist = file(ROOT_DIR . '/INVENTORY_ITEM_BLACKLIST.txt');
 
     print "Send inventory to Nexternal\n";
     // Update Inventory.
@@ -374,7 +374,7 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
             continue;
         }
 
-        $response = $nexternal->updateInventory($ig);
+        $response = $nexternal->updateInventory($ig['sku'],$ig['qty']);
         if (!empty($response['errors'])) {
             $errors = array_merge($errors, $response['errors']);
             foreach ($response['errors'] as $e) {
