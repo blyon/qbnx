@@ -184,7 +184,7 @@ class QuickbooksController
     public function getInventory()
     {
         return $this->_processInventoryQueryResponse(
-            $this->_createInventoryQuery('Main')
+            $this->_createInventoryQuery()
         );
     }
 
@@ -1048,14 +1048,13 @@ class QuickbooksController
     }
 
 
-    private function _createInventoryQuery($site)
+    private function _createInventoryQuery()
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
 
-        $query = $this->_qb->request->AppendInventorySiteQueryRq();
+        $query = $this->_qb->request->AppendItemSitesQueryRq();
 
-        $query->ORInventorySiteQuery->InvetorySiteFilter->ORNameFilter->NameFilter->MatchCriterion->setValue(2);
-        $query->ORInventorySiteQuery->InventorySiteFilter->ORNameFilter->NameFilter->Name->setValue($site);
+        $query->ORItemSitesQuery->ItemSitesFilter->ORItemSitesFilter->SiteFilter->ORSiteFilter->FullNameList->setValue($site);
 
         return $this->_qb->sendRequest();
     }
@@ -1064,7 +1063,6 @@ class QuickbooksController
     private function _processInventoryQueryResponse($response)
     {
         $this->log->write(Log::DEBUG, __CLASS__."::".__FUNCTION__);
-        return array();
 
         if (!$response->ResponseList->Count) {
             $this->log->write(Log::ERROR, "Failed to retrieve InvetoryQuery Response.");
@@ -1077,17 +1075,13 @@ class QuickbooksController
         }
 
         $items = array();
-        for ($i=0; $i<$response->ResponseList->Count; $i++) {
-            $details = &$response->ResponseList->GetAt($i)->Detail;
-            for ($n=0; $n<$details->Count; $n++) {
-                $d = $details->GetAt($n);
-                array_push($items, array(
-                    'sku'   => $this->_getValue($d, 'FullName'),
-                    'qty'   => (int) $this->_getValue($d, 'QuantityOnHand'),
-                    //'qty'   => $this->_getValue($d, 'QuantityOnOrder'),
-                    //'qty'   => $this->_getValue($d, 'QuantityOnSalesOrder'),
-                ));
-            }
+        for ($i=0; $i<$response->Detail->Count; $i++) {
+            $details = &$response->Detail->GetAt($i);
+            $item = $details->ORItemAssemblyORInventory->ItemInventoryRef;
+            array_push($items, array(
+                'sku'   => $this->_getValue($item, 'FullName'),
+                'qty'   => (int) $this->_getValue($details, 'QuantityOnHand'),
+            ));
         }
 
         return $items;
