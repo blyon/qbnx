@@ -1047,6 +1047,10 @@ class QuickbooksController
                 $tcomp = $this->_trimCompanyName($address['company'], 39-strlen($tname));
                 $return['Addr1'] = substr(implode(" - ", array($tcomp, $tname)),0,41);
             }
+        } elseif (!empty($address['company'])) {
+            $return['Addr1'] = $this->_trimCompanyName($address['company'], 39-strlen($tname));
+        } elseif (!empty($address['firstName']) || !empty($address['lastName'])) {
+            $return['Addr1'] = $this->_trimName($address['firstName'], $address['lastName'], 40-strlen($company));
         }
 
         // Is there a second address field?
