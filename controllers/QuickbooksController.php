@@ -1093,7 +1093,7 @@ class QuickbooksController
     {
         $return = "";
         trim($first);
-        trim(last);
+        trim($last);
         ucfirst($first);
         ucfirst($last);
 
@@ -1131,7 +1131,12 @@ class QuickbooksController
 
 
     /**
+     * Get the Value of an Object Attribute.
      *
+     * @param object $object
+     * @param string $attribute
+     *
+     * @return string
      */
     private function _getValue(&$object, $attribute)
     {
