@@ -690,48 +690,20 @@ class QuickbooksController
         }
 
         // Billing Address.
-        $x=1;
-        if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
-            $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue(sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']));
-            $x++;
+        $a = $this->_makeAddress($order->billingAddress);
+        foreach ($a as $k => $v) {
+            if (!empty($v)) {
+                $request->BillAddress->$k->setValue($v);
+            }
         }
-        if (!empty($order->billingAddress['company'])) {
-            $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue($order->billingAddress['company']);
-            $x++;
-        }
-        $addr = "Addr".$x;$x++;
-        $request->BillAddress->$addr->setValue(             $order->billingAddress['address']);
-        $addr = "Addr".$x;$x++;
-        $request->BillAddress->$addr->setValue(             $order->billingAddress['address2']);
-        $request->BillAddress->City->setValue(              $order->billingAddress['city']);
-        $request->BillAddress->State->setValue(             $order->billingAddress['state']);
-        $request->BillAddress->PostalCode->setValue(        $order->billingAddress['zip']);
-        $request->BillAddress->Country->setValue(           $order->billingAddress['country']);
-        //$request->BillAddress->Note->setValue(              $order->billingAddress['phone']);
 
         // Shipping Address.
-        $x=1;
-        if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
-            $addr = "Addr".$x;
-            $request->ShipAddress->$addr->setValue(sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']));
-            $x++;
+        $a = $this->_makeAddress($order->shippingAddress);
+        foreach ($a as $k => $v) {
+            if (!empty($v)) {
+                $request->ShipAddress->$k->setValue($v);
+            }
         }
-        if (!empty($order->shippingAddress['company'])) {
-            $addr = "Addr".$x;
-            $request->ShipAddress->$addr->setValue($order->billingAddress['company']);
-            $x++;
-        }
-        $addr = "Addr".$x;$x++;
-        $request->ShipAddress->$addr->setValue(         $order->shippingAddress['address']);
-        $addr = "Addr".$x;$x++;
-        $request->ShipAddress->$addr->setValue(         $order->shippingAddress['address2']);
-        $request->ShipAddress->City->setValue(          $order->shippingAddress['city']);
-        $request->ShipAddress->State->setValue(         $order->shippingAddress['state']);
-        $request->ShipAddress->PostalCode->setValue(    $order->shippingAddress['zip']);
-        $request->ShipAddress->Country->setValue(       $order->shippingAddress['country']);
-        //$request->ShipAddress->Note->setValue(          $order->shippingAddress['phone']);
 
         // Tax Code.
         $request->ItemSalesTaxRef->FullName->setValue($code);
@@ -796,53 +768,19 @@ class QuickbooksController
         }
 
         // Billing Address.
-        $x=1;
-        if (isset($order->billingAddress['firstName']) && isset($order->billingAddress['lastName'])) {
-            $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue(sprintf("%s %s", $order->billingAddress['firstName'], $order->billingAddress['lastName']));
-            $x++;
+        $a = $this->_makeAddress($order->billingAddress);
+        foreach ($a as $k => $v) {
+            if (!empty($v)) {
+                $request->BillAddress->$k->setValue($v);
+            }
         }
-        if (!empty($order->billingAddress['company'])) {
-            $addr = "Addr".$x;
-            $request->BillAddress->$addr->setValue($order->billingAddress['company']);
-            $x++;
-        }
-        $addr = "Addr".$x;$x++;
-        $request->BillAddress->$addr->setValue(           $order->billingAddress['address']);
-        $addr = "Addr".$x;$x++;
-        $request->BillAddress->$addr->setValue(           $order->billingAddress['address2']);
-        $request->BillAddress->City->setValue(            $order->billingAddress['city']);
-        $request->BillAddress->State->setValue(           $order->billingAddress['state']);
-        $request->BillAddress->PostalCode->setValue(      $order->billingAddress['zip']);
-        $request->BillAddress->Country->setValue(         $order->billingAddress['country']);
-        //if (isset($order->billingAddress['phone'])) {
-            //$request->BillAddress->Note->setValue(        $order->billingAddress['phone']);
-        //}
 
         // Shipping Address.
-        if (!empty($order->shippingAddress)) {
-            $x=1;
-            if (isset($order->shippingAddress['firstName']) && isset($order->shippingAddress['lastName'])) {
-                $addr = "Addr".$x;
-                $request->ShipAddress->$addr->setValue(sprintf("%s %s", $order->shippingAddress['firstName'], $order->shippingAddress['lastName']));
-                $x++;
+        $a = $this->_makeAddress($order->shippingAddress);
+        foreach ($a as $k => $v) {
+            if (!empty($v)) {
+                $request->ShipAddress->$k->setValue($v);
             }
-            if (!empty($order->shippingAddress['company'])) {
-                $addr = "Addr".$x;
-                $request->ShipAddress->$addr->setValue($order->billingAddress['company']);
-                $x++;
-            }
-            $addr = "Addr".$x;$x++;
-            $request->ShipAddress->$addr->setValue(       $order->shippingAddress['address']);
-            $addr = "Addr".$x;$x++;
-            $request->ShipAddress->$addr->setValue(       $order->shippingAddress['address2']);
-            $request->ShipAddress->City->setValue(        $order->shippingAddress['city']);
-            $request->ShipAddress->State->setValue(       $order->shippingAddress['state']);
-            $request->ShipAddress->PostalCode->setValue(  $order->shippingAddress['zip']);
-            $request->ShipAddress->Country->setValue(     $order->shippingAddress['country']);
-            //if (isset($order->shippingAddress['phone'])) {
-                //$request->ShipAddress->Note->setValue(    $order->shippingAddress['phone']);
-            //}
         }
 
         // Products.
@@ -1066,6 +1004,128 @@ class QuickbooksController
         }
 
         return $items;
+    }
+
+
+    private function _makeAddress($address)
+    {
+        $return = array(
+            'Addr1'     => null,
+            'Addr2'     => null,
+            'Addr3'     => null,
+            'Addr4'     => null,
+            'City'      => $address['city'],
+            'State'     => $address['state'],
+            'PostalCode'=> $address['zip'],
+            'Country'   => $address['country'],
+            'Note'      => null,
+        );
+
+        // Is there a name and company?
+        if (!empty($address['company']) && (!empty($address['firstName']) || !empty($address['lastName']))) {
+            $company = $this->_trimCompanyName($address['company'], 41);
+            $name    = $this->_triName($address['firstName'], $address['lastName'], 41);
+            // Do we have to combine them?
+            if (empty($return['Addr2'])) {
+                // No.
+                $return['Addr1'] = $name;
+                $return['Addr2'] = $company;
+            } else {
+                // Yes, we have to combine them.
+                $test = implode(" | ", array($company, $name));
+                if (strlen($test) <= 41) {
+                    $return['Addr1'] = $test;
+                }
+                $test = implode(" | ", array($company,
+                    $this->_trimName($address['firstName'], $address['lastName'], 41-strlen($company))));
+                if (strlen($test) <= 41) {
+                    $return['Addr1'] = $test;
+                }
+                // All else fails, chop em both up...
+                $tname = $this->_trimName($address['firstName'], $address['lastName'], 40-strlen($company));
+                $tcomp = $this->_trimCompanyName($address['company'], 39-strlen($tname));
+                $return['Addr1'] = substr(implode(" |", array($tname, $tcomp)),0,41);
+            }
+        }
+
+        // Is there a second address field?
+        if (!empty($address['address2'])) {
+            $return['Addr2'] = $address['address'];
+            $return['Addr3'] = $address['address2'];
+        } else {
+            $return['Addr3'] = $address['address'];
+        }
+    }
+
+
+    private function _trimCompanyName($company, $len)
+    {
+        trim($company);
+
+        // Simple solution first, try as is.
+        if (strlen($company) <= $len) {
+            return $company;
+        }
+
+        // Check for a suffix.
+        if (preg_match("/^(.+), (.+).?$/", $company, $m)) {
+            // Try without the suffix.
+            if (strlen($m[1]) <= $len) {
+                return $m[1];
+            }
+        }
+
+        // Just trim it.
+        return substr($company, 0, $len);
+    }
+
+
+    /**
+     * Trim Name
+     *
+     * @param string $first
+     * @param string $last
+     * @param int $len
+     * @return string
+     */
+    private function _trimName($first, $last, $len)
+    {
+        $return = "";
+        trim($first);
+        trim(last);
+        ucfirst($first);
+        ucfirst($last);
+
+        if (!empty($first) && !empty($last)) {
+            // Simple solution first... join them and return.
+            $return = $first . " " . $last;
+            if (strlen($return) <= $len) {
+                return $return;
+            }
+            // Use Initial for first name.
+            $return = substr($first,0,1) . ". " . $last;
+            if (strlen($return) <= $len) {
+                return $return;
+            }
+            // Use just last Name.
+            if (strlen($last) <= $len) {
+                return $last;
+            }
+            // Use Initials.
+            return substr($first,0,1).". ".substr($last,0,1).".";
+        }
+        elseif (!empty($last)) {
+            $return = $last;
+        }
+        elseif (!empty($first)) {
+            $return = $first;
+        }
+        // Is our return string to long?
+        if (strlen($return) > $len) {
+            // Just trim it...
+            return substr($return,0,$len);
+        }
+        return $return;
     }
 
 
