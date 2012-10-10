@@ -364,7 +364,7 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
     $sentItems = array();
 
     // Load Blacklist.
-    $blacklist = file(ROOT_DIR . '/INVENTORY_ITEM_BLACKLIST.txt');
+    $blacklist = file(ROOT_DIR . '/INVENTORY_ITEM_BLACKLIST.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
     print "Send inventory to Nexternal\n";
     // Update Inventory.
@@ -374,14 +374,12 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
             continue;
         }
 
+        // Skip if not a Positive Qty.
         if ($ig['qty'] < 1) {
-            $response = array(
-                'errors' => array("InventoryUpdate/Inventory must be a positive number."),
-                'items'  => array(),
-            );
-        } else {
-            $response = $nexternal->updateInventory($ig['sku'],$ig['qty']);
+            continue;
         }
+
+        $response = $nexternal->updateInventory($ig['sku'],$ig['qty']);
         if (!empty($response['errors'])) {
             $errors = array_merge($errors, $response['errors']);
             foreach ($response['errors'] as $e) {
