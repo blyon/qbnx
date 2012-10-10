@@ -1024,7 +1024,7 @@ class QuickbooksController
         // Is there a name and company?
         if (!empty($address['company']) && (!empty($address['firstName']) || !empty($address['lastName']))) {
             $company = $this->_trimCompanyName($address['company'], 41);
-            $name    = $this->_triName($address['firstName'], $address['lastName'], 41);
+            $name    = $this->_trimName($address['firstName'], $address['lastName'], 41);
             // Do we have to combine them?
             if (empty($return['Addr2'])) {
                 // No.
