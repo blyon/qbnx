@@ -667,9 +667,14 @@ class NexternalController
                                 );
                                 break;
                             case 'GiftCertDiscount':
+                                if ("Gift Certificate" == (string) $order->OrderType) {
+                                    $amount = -1 * abs((int) $discount);
+                                } else {
+                                    $amount = (int) $discount;
+                                }
                                 $o->giftCerts[] = array(
                                     'code'  => (string) $discount->attributes()->Code,
-                                    'amount'=> (string) $discount,
+                                    'amount'=> $amount,
                                 );
                                 break;
                             default:
