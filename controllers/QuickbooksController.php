@@ -1055,6 +1055,7 @@ class QuickbooksController
         } else {
             $return['Addr3'] = $address['address'];
         }
+        return $return;
     }
 
 
