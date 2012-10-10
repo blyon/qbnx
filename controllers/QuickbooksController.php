@@ -16,7 +16,7 @@ require_once dirname(__FILE__) . '/../models/Quickbooks.php';
 class QuickbooksController
 {
     const TAXCODE_SUFFIX = 'sbe';
-    const GIFTCERT_NAME  = "Internet Sales";
+    const GIFTCERT_NAME  = "Gift Certificate";
     const DISCOUNT_NAME  = "DISCOUNT";
     const SHIPPING_NAME  = "SHIPPING";
     private $_qb;
