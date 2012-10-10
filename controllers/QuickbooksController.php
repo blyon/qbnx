@@ -800,7 +800,7 @@ class QuickbooksController
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
             $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(    self::GIFTCERT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                 $gc['code']);
-            $lineItem->SalesReceiptLineAdd->Amount->setValue(               $gc['amount']);
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(               -1 * abs($gc['amount']));
             $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("Tax");
         }
 
@@ -809,7 +809,7 @@ class QuickbooksController
             $lineItem = $request->ORSalesReceiptLineAddList->Append();
             $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(   self::DISCOUNT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                implode(" ", array($discount['type'],$discount['name'])));
-            $lineItem->SalesReceiptLineAdd->Amount->setValue(              $discount['value']);
+            $lineItem->SalesReceiptLineAdd->Amount->setValue(              -1 *abs($discount['value']));
             $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("Tax");
         }
 
