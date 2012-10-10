@@ -1158,12 +1158,10 @@ class NexternalController
             if ($child->getName() == 'Error') {
                 $return['errors'] = $child->xpath("ErrorDescription");
             } elseif ($child->getName() == 'InventoryProduct') {
-                foreach ($child->children() as $item) {
-                    array_push($return['items'], array(
-                        'sku' => (string) $item->ProductSKU,
-                        'qty' => (int) $item->Inventory,
-                    ));
-                }
+                array_push($return['items'], array(
+                    'sku' => (string) $child->ProductSKU,
+                    'qty' => (int) $child->Inventory,
+                ));
             }
         }
 
