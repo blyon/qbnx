@@ -374,7 +374,14 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
             continue;
         }
 
-        $response = $nexternal->updateInventory($ig['sku'],$ig['qty']);
+        if ($ig['qty'] < 1) {
+            $response = array(
+                'errors' => array("InventoryUpdate/Inventory must be a positive number."),
+                'items'  => array(),
+            );
+        } else {
+            $response = $nexternal->updateInventory($ig['sku'],$ig['qty']);
+        }
         if (!empty($response['errors'])) {
             $errors = array_merge($errors, $response['errors']);
             foreach ($response['errors'] as $e) {
