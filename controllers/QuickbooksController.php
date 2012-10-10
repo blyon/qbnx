@@ -1032,19 +1032,20 @@ class QuickbooksController
                 $return['Addr2'] = $company;
             } else {
                 // Yes, we have to combine them.
-                $test = implode(" | ", array($company, $name));
+                $test = implode(" - ", array($company, $name));
                 if (strlen($test) <= 41) {
                     $return['Addr1'] = $test;
                 }
-                $test = implode(" | ", array($company,
-                    $this->_trimName($address['firstName'], $address['lastName'], 41-strlen($company))));
+                $test = implode(" - ", array($company,
+                    $this->_trimName($address['firstName'], $address['lastName'], 41-strlen($company)))
+                );
                 if (strlen($test) <= 41) {
                     $return['Addr1'] = $test;
                 }
                 // All else fails, chop em both up...
                 $tname = $this->_trimName($address['firstName'], $address['lastName'], 40-strlen($company));
                 $tcomp = $this->_trimCompanyName($address['company'], 39-strlen($tname));
-                $return['Addr1'] = substr(implode(" |", array($tname, $tcomp)),0,41);
+                $return['Addr1'] = substr(implode(" - ", array($tcomp, $tname)),0,41);
             }
         }
 
