@@ -1048,9 +1048,9 @@ class QuickbooksController
                 $return['Addr1'] = substr(implode(" - ", array($tcomp, $tname)),0,41);
             }
         } elseif (!empty($address['company'])) {
-            $return['Addr1'] = $this->_trimCompanyName($address['company'], 39-strlen($tname));
+            $return['Addr1'] = $this->_trimCompanyName($address['company'], 41);
         } elseif (!empty($address['firstName']) || !empty($address['lastName'])) {
-            $return['Addr1'] = $this->_trimName($address['firstName'], $address['lastName'], 40-strlen($company));
+            $return['Addr1'] = $this->_trimName($address['firstName'], $address['lastName'], 41);
         }
 
         // Is there a second address field?
@@ -1058,7 +1058,11 @@ class QuickbooksController
             $return['Addr2'] = $address['address'];
             $return['Addr3'] = $address['address2'];
         } else {
-            $return['Addr3'] = $address['address'];
+            if (!empty($return['Addr2'])) {
+                $return['Addr3'] = $address['address'];
+            } else {
+                $return['Addr2'] = $address['address'];
+            }
         }
         return $return;
     }
