@@ -655,6 +655,19 @@ class NexternalController
                     }
                 }
 
+                // Add Gift Certificate Purchases.
+                if (!empty($order->GiftCert)) {
+                    foreach ($order->GiftCert->children() as $cert) {
+                        $o->products[] = array(
+                            'sku'       => 'Gift Certificate',
+                            'name'      => (string) $cert->GiftCertCode,
+                            'qty'       => 1,
+                            'price'     => (string) $cert->GiftCertAmount,
+                            'tracking'  => null,
+                        );
+                    }
+                }
+
                 // Add Discount(s).
                 if (isset($order->Discounts)) {
                     foreach ($order->Discounts->children() as $discount) {
@@ -667,14 +680,9 @@ class NexternalController
                                 );
                                 break;
                             case 'GiftCertDiscount':
-                                if ("Gift Certificate" == (string) $order->OrderType) {
-                                    $amount = -1 * abs((int) $discount);
-                                } else {
-                                    $amount = (int) $discount;
-                                }
                                 $o->giftCerts[] = array(
                                     'code'  => (string) $discount->attributes()->Code,
-                                    'amount'=> $amount,
+                                    'amount'=> -1 * abs((int) $discount),
                                 );
                                 break;
                             default:
