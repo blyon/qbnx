@@ -976,6 +976,7 @@ class QuickbooksController
 
         $query = $this->_qb->request->AppendItemSitesQueryRq();
 
+        $query->ActiveStatus->SetAsString("ActiveOnly");
         $query->IncludeRetElementList->add("QuantityOnHand");
         $query->ORItemSitesQuery->ItemSitesFilter->ORItemSitesFilter->ItemSiteFilter->SiteFilter->ORSiteFilter->FullNameList->add($site);
 
