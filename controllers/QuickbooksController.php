@@ -791,8 +791,12 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->Amount->setValue(                      $product['price']);
             $lineItem->SalesReceiptLineAdd->Quantity->setValue(                    $product['qty']);
             $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(                 $order_date);
-            $lineItem->SalesReceiptLineAdd->InventorySiteRef->FullName->setValue(  "Main");
-            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue(    $itemCode);
+            if ("Gift Certificate" != $product['sku']) {
+                $lineItem->SalesReceiptLineAdd->InventorySiteRef->FullName->setValue("Main");
+                $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("0");
+            } else {
+                $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue($itemCode);
+            }
         }
 
         // Gift Certificates.
