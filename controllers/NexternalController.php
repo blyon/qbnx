@@ -657,7 +657,7 @@ class NexternalController
 
                 // Add Gift Certificate Purchases.
                 if (!empty($order->GiftCert)) {
-                    foreach ($order->GiftCert->children() as $cert) {
+                    foreach ($order->GiftCert as $cert) {
                         $o->products[] = array(
                             'sku'       => 'Gift Certificate',
                             'name'      => (string) $cert->GiftCertCode,
