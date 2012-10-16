@@ -793,6 +793,8 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->ServiceDate->setValue(                 $order_date);
             if ("Gift Certificate" != $product['sku']) {
                 $lineItem->SalesReceiptLineAdd->InventorySiteRef->FullName->setValue("Main");
+            }
+            if ($order->type == "Gift Certificate") {
                 $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("0");
             } else {
                 $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue($itemCode);
