@@ -8,6 +8,7 @@ class Order
     public $id;
     public $nexternalId;
     public $timestamp;
+    public $shipDate;
     public $type;
     public $status;
     public $subTotal;

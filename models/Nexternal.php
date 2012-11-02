@@ -19,6 +19,10 @@ class Nexternal
     const BILLSTAT_DECLINED     = 'Declined';
     const BILLSTAT_CC           = 'CC';
     const BILLSTAT_CANCELED     = 'Canceled';
+    const ORDERSTAT_SHIPPED     = 'Shipped';
+    const ORDERSTAT_UNSHIPPED   = 'Unshipped';
+    const ORDERSTAT_PROCESS     = 'In Process';
+    const ORDERSTAT_CANCELED    = 'Canceled';
     const AUTHSTEP_INACTIVE     = 'inactive';
     const AUTHSTEP_PENDING      = 'pending';
     const AUTHSTEP_ACTIVE       = 'active';

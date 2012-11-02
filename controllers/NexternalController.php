@@ -497,6 +497,9 @@ class NexternalController
             addChild('Date', date('m/d/Y', $endDate));
         $this->_nx->dom->OrderUpdRange->OrderUpdEnd->DateTime->addChild('Time', date('H:i', $endDate));
 
+        // Add Shipped Status Filter.
+        $this->_nx->dom->addChild('OrderStatus', Nexternal::ORDERSTAT_SHIPPED);
+
         // Add Billing Status Filter.
         if (!is_null($billingStatus)) {
             if (in_array($billingStatus, array(Nexternal::BILLSTAT_UNBILLED, Nexternal::BILLSTAT_AUTHORIZED,
@@ -585,6 +588,8 @@ class NexternalController
                 $o->id              = (string) $order->OrderNo;
                 $o->timestamp       = strtotime((string) $order->OrderDate->DateTime->Date . ' '
                     . (string) $order->OrderDate->DateTime->Time);
+                $o->shipDate        = strtotime((string) $order->ShipDate->DateTime->Date . ' '
+                    . (string) $order->ShipDate->DateTime->Time);
                 $o->type            = (string) $order->OrderType;
                 $o->status          = (string) $order->OrderStatus;
                 $o->subTotal        = (string) $order->OrderNet;

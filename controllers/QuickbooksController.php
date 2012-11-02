@@ -354,6 +354,7 @@ class QuickbooksController
                 $o->qbTxn           = $this->_getValue($d,'TxnID');
                 $o->id              = $this->_getValue($d,'RefNumber');
                 $o->timestamp       = variant_date_to_timestamp($this->_getValue($d,'TxnDate'));
+                $o->shipDate        = $o->timestamp;
                 //$o->type;
                 //$o->status;
                 $o->subTotal        = $this->_getValue($d,'Subtotal');
@@ -508,6 +509,7 @@ class QuickbooksController
                 $o->qbTxn           = $this->_getValue($d,'TxnID');
                 $o->id              = $this->_getValue($d,'RefNumber');
                 $o->timestamp       = variant_date_to_timestamp($this->_getValue($d,'TxnDate'));
+                $o->shipDate        = $o->timestamp;
                 //$o->type;
                 //$o->status;
                 $o->subTotal        = $this->_getValue($d,'Subtotal');
@@ -752,7 +754,9 @@ class QuickbooksController
         // Build Request.
         $request = $this->_qb->request->AppendSalesReceiptAddRq();
         $request->ItemSalesTaxRef->FullName->setValue($code);
-        $order_date = date ('m/d/Y',$order->timestamp);
+
+        // @NOTICE: Order Date in QB needs to be the date the order shipped.
+        $order_date = date ('m/d/Y',$order->shipDate);
 
         $request->DepositToAccountRef->FullName->setValue('Undeposited Funds');
         $request->RefNumber->setValue(                    "N" . preg_replace("/^N/", "", $order->id));
@@ -872,6 +876,7 @@ class QuickbooksController
         $o->qbTxn           = $this->_getValue($d,'TxnID');
         $o->id              = $this->_getValue($d,'RefNumber');
         $o->timestamp       = $this->_getValue($d,'TxnDate');
+        $o->shipDate        = $o->timestamp;
         $o->subTotal        = $this->_getValue($d,'Subtotal');
         $o->taxTotal        = $this->_getValue($d,'SalesTaxTotal');
         $o->taxRate         = $this->_getValue($d,'SalesTaxPercentage');
