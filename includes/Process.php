@@ -374,9 +374,9 @@ function _pushInventoryToNexternal(&$qbInventory, &$nexternal, &$quickbooks) {
             continue;
         }
 
-        // Skip if not a Positive Qty.
-        if ($ig['qty'] < 1) {
-            continue;
+        // Set to 0 if negative.
+        if ($ig['qty'] < 0) {
+            $ig['qty'] = 0;
         }
 
         $response = $nexternal->updateInventory($ig['sku'],$ig['qty']);
