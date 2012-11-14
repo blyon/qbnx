@@ -1009,10 +1009,13 @@ class QuickbooksController
         for ($i=0; $i<$response->ResponseList->GetAt(0)->Detail->Count; $i++) {
             $details = $response->ResponseList->GetAt(0)->Detail->GetAt($i);
             $item = $details->ORItemAssemblyORInventory->ItemInventoryRef;
-            array_push($items, array(
-                'sku'   => $this->_getValue($item, 'FullName'),
-                'qty'   => (int) $this->_getValue($details, 'QuantityOnHand'),
-            ));
+            $iDetails = array(
+                'sku' => $this->_getValue($item, 'FullName'),
+                'qty' => (int) $this->_getValue($details, 'QuantityOnHand')
+            );
+            if (strlen($iDetails['sku']) > 0) {
+                array_push($items, $iDetails);
+            }
         }
 
         return $items;
