@@ -811,7 +811,7 @@ class QuickbooksController
             $lineItem->SalesReceiptLineAdd->ItemRef->FullName->setValue(    self::GIFTCERT_NAME);
             $lineItem->SalesReceiptLineAdd->Desc->setValue(                 $gc['code']);
             $lineItem->SalesReceiptLineAdd->Amount->setValue(               $gc['amount']);
-            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("Tax");
+            $lineItem->SalesReceiptLineAdd->SalesTaxCodeRef->FullName->setValue("No");
         }
 
         // Discounts.
