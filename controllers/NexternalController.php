@@ -687,7 +687,7 @@ class NexternalController
                             case 'GiftCertDiscount':
                                 $o->giftCerts[] = array(
                                     'code'  => (string) $discount->attributes()->Code,
-                                    'amount'=> -1 * abs((int) $discount),
+                                    'amount'=> -1 * abs(floatval((string) $discount)),
                                 );
                                 break;
                             default:
