@@ -8,6 +8,7 @@
  * @version GIT:<git_id>
  */
 
+DEFINE('RETRY_COUNT',               2);
 DEFINE('START_TIME',                time());
 DEFINE('MEMORY_CAP',                104857600); // 100 MB
 DEFINE('ROOT_DIR',                  dirname(__FILE__));
