@@ -4,7 +4,7 @@ class Log
     /**
      * @var int DISPLAY_LEVEL Maximum error level to print to the console.
      */
-    const DISPLAY_LEVEL = 3;
+    const DISPLAY_LEVEL = 5;
 
     const CATEGORY_FATAL        = 0;
     const CATEGORY_QB_SUCCESS   = 100;
