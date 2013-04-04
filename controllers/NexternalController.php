@@ -17,6 +17,7 @@ require_once dirname(__FILE__) . '/../includes/Location.php';
 class NexternalController
 {
     private $_nx;
+    private $_retryWait = 300; // in seconds
     public  $log;
 
 
@@ -69,15 +70,32 @@ class NexternalController
      * Retrieve a Customer by ID.
      *
      * @param integer $customer_id Customer ID.
+     * @param integer $retry_count Retry Attempt Number (default 0)
      *
      * @return Customer
      */
-    public function getCustomer($customer_id)
+    public function getCustomer($customer_id, $retry_count=0)
     {
         // Query Customers.
         $response = $this->_processCustomerQueryResponse(
             $this->_customerQueryById($customer_id)
         );
+        // Sleep and Retry if Query Limit Reached.
+        if (! empty($response['errors']) && !$retry_count) {
+            $retry = false;
+            foreach ($response['errors'] as $error) {
+                if (preg_match('/An excessive number of/', $error)) {
+                    $retry = true;
+                    break;
+                }
+            }
+            if ($retry) {
+                $this->log->write(Log::NOTICE, "Sleeping for " . $this->_retryWait . " seconds, then retrying");
+                $this->_nx->authStep = Nexternal::AUTHSTEP_ACTIVE;
+                sleep($this->_retryWait);
+                return $this->getCustomer($customer_id, 1 + $retry_count);
+            }
+        }
         return (!empty($response['customers'])
             ? array_shift($response['customers'])
             : false
@@ -90,10 +108,11 @@ class NexternalController
      *
      * @param type $from Beginning Time
      * @param type $to   End Time
+     * @param integer    $retry_count Retry Attempt Number (default 0)
      *
      * @return array of Customers.
      */
-    public function getCustomers($from, $to)
+    public function getCustomers($from, $to, $retry_count=0)
     {
         // Query Customers.
         $page      = 0;
@@ -104,6 +123,23 @@ class NexternalController
             $response = $this->_processCustomerQueryResponse(
                 $this->_customerQueryByDate($from, $to, $page)
             );
+
+            // Sleep and Retry if Query Limit Reached.
+            if (! empty($response['errors']) && !$retry_count) {
+                $retry = false;
+                foreach ($response['errors'] as $error) {
+                    if (preg_match('/An excessive number of/', $error)) {
+                        $retry = true;
+                        break;
+                    }
+                }
+                if ($retry) {
+                    $this->log->write(Log::NOTICE, "Sleeping for " . $this->_retryWait . " seconds, then retrying");
+                    $this->_nx->authStep = Nexternal::AUTHSTEP_ACTIVE;
+                    sleep($this->_retryWait);
+                    return $this->getCustomers($from, $to, 1 + $retry_count);
+                }
+            }
 
             // Add Customer(s) to Array.
             foreach ($response['customers'] as $customer) {
@@ -132,10 +168,11 @@ class NexternalController
      *
      * @param integer $from Beginning Time
      * @param integer $to   End Time
+     * @param integer    $retry_count Retry Attempt Number (default 0)
      *
      * @return array of Orders.
      */
-    public function getOrders($from, $to)
+    public function getOrders($from, $to, $retry_count=0)
     {
         // Query "paid" Nexternal Orders.
         $page      = 0;
@@ -151,6 +188,23 @@ class NexternalController
                     $page
                 )
             );
+
+            // Sleep and Retry if Query Limit Reached.
+            if (! empty($response['errors']) && !$retry_count) {
+                $retry = false;
+                foreach ($response['errors'] as $error) {
+                    if (preg_match('/An excessive number of/', $error)) {
+                        $retry = true;
+                        break;
+                    }
+                }
+                if ($retry) {
+                    $this->log->write(Log::NOTICE, "Sleeping for " . $this->_retryWait . " seconds, then retrying");
+                    $this->_nx->authStep = Nexternal::AUTHSTEP_ACTIVE;
+                    sleep($this->_retryWait);
+                    return $this->getOrders($from, $to, 1 + $retry_count);
+                }
+            }
 
             // Add Order(s) to Array.
             foreach ($response['orders'] as $order) {
@@ -178,10 +232,11 @@ class NexternalController
      * Download Orders from Nexternal by a order ID
      *
      * @param integer $id OrderID
+     * @param integer $retry_count Retry Attempt Number (default 0)
      *
      * @return array of Orders.
      */
-    public function getOrderbyID($id)
+    public function getOrderbyID($id, $retry_count=0)
     {
         $orders    = array();
         $response = $this->_processOrderQueryResponse(
@@ -190,6 +245,23 @@ class NexternalController
             )
         );
 
+        // Sleep and Retry if Query Limit Reached.
+        // Sleep and Retry if Query Limit Reached.
+        if (! empty($response['errors']) && !$retry_count) {
+            $retry = false;
+            foreach ($response['errors'] as $error) {
+                if (preg_match('/An excessive number of/', $error)) {
+                    $retry = true;
+                    break;
+                }
+            }
+            if ($retry) {
+                $this->log->write(Log::NOTICE, "Sleeping for " . $this->_retryWait . " seconds, then retrying");
+                $this->_nx->authStep = Nexternal::AUTHSTEP_ACTIVE;
+                sleep($this->_retryWait);
+                return $this->getOrderbyID($id, 1 + $retry_count);
+            }
+        }
 
         // Add Order(s) to Array.
         foreach ($response['orders'] as $order) {
@@ -796,13 +868,16 @@ class NexternalController
         }
 
         // Process Errors.
-        if (count($dom->children('Errors'))) {
-            $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
-            $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", (string) $this->_nx->dom->Errors->ErrorDescription));
-            $return['errors'][] = (string) $responseDom->Errors->ErrorDescription;
+        foreach ($dom->children() as $child) {
+            if ($child->getName() == 'Error') {
+                $this->_nx->authStep = Nexternal::AUTHSTEP_INACTIVE;
+                $this->log->write(Log::ERROR, sprintf("Error From Nexternal: %s", $child->xpath("ErrorDescription")[0]));
+                $return['errors'][] = $child->xpath("ErrorDescription")[0];
+            }
+        }
+        if (! empty($return['errors'])) {
             return $return;
         }
-
 
         // Check for More Pages.
         $return['morePages'] = isset($dom->NextPage);
